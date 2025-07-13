@@ -1,11 +1,23 @@
-# Description
+# pico-qwen Description
+
+**pico-qwen** is an experimental feature-enriched version of [qwen3-rs by Ilya Builuk](https://github.com/reinterpretcat/qwen3-rs) targeting very low-resources systems. Our goals are to explore the feasibility of:
+
+- Serve an inference API endpoint that can be somehow useful on systems like MiniPC, SBC, low-power Home Automation servers, etc.
+- Serve a minimalistic Chat-WebUI that uses the underlying inference API endpoint.
+- Serve a MCP endpoint with multi-agentic tools like WEB Search, WEB Research, Sequential Thinking, Rumination, etc.
+- Transparently allow fast LLM inference when online, while resiliently fall back to a local slow-but-working almost equivalent inference when all the configured cloud servers aren't available, i.e. when the Internet is offline.
+- Allow selecting the quantization level, thus being able to balance quality, performance and available computing resources.
+- More to come, if we get acceptable results from the experimental phase.
+
+
+## qwen3-rs Description
 
 **qwen3-rs** is an educational Rust project for exploring and running Qwen3 language family models. It is designed to be clear, modular, and approachable for learners, with minimal dependencies and many core algorithms reimplemented from scratch for transparency.
 
 > **Note:** Parts of this codebase, including documentation and core algorithms, were generated or assisted by large language models (LLMs) to accelerate development and improve educational clarity. As a starting reference, the project [qwen3.c](https://github.com/adriancable/qwen3.c) was used for understanding model internals and file formats.
 
 
-## Project Goals
+## qwen3-rs Project Goals
 
 - **Educational:** Learn how transformer architectures, quantization, and efficient inference work in Rust.
 - **Minimal Dependencies:** Most algorithms (tokenization, quantization, sampling, etc.) are implemented from scratch—no heavy ML or Python bindings.
