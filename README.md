@@ -1,13 +1,13 @@
-# pico-qwen Description
+# pico-qwen
 
 **pico-qwen** is an experimental feature-enriched version of [qwen3-rs by Ilya Builuk](https://github.com/reinterpretcat/qwen3-rs) targeting very low-resources systems. Our goals are to explore the feasibility of:
 
-- Serve an inference API endpoint that can be somehow useful on systems like MiniPC, SBC, low-power Home Automation servers, etc.
-- Serve a minimalistic Chat-WebUI that uses the underlying inference API endpoint.
-- Serve a MCP endpoint with multi-agentic tools like WEB Search, WEB Research, Sequential Thinking, Rumination, etc.
-- Transparently allow fast LLM inference when online, while resiliently fall back to a local slow-but-working almost equivalent inference when all the configured cloud servers aren't available, i.e. when the Internet is offline.
-- Allow selecting the quantization level, thus being able to balance quality, performance and available computing resources.
-- More to come, if we get acceptable results from the experimental phase.
+- [ ] Serve an inference API endpoint that can be somehow useful on systems like MiniPC, SBC, low-power Home Automation servers, etc.
+- [ ] Serve a minimalistic Chat-WebUI that uses the underlying inference API endpoint.
+- [ ] Serve a MCP endpoint with multi-agentic tools like WEB Search, WEB Research, Sequential Thinking, Rumination, etc.
+- [ ] Transparently allow fast LLM inference when online, while resiliently fall back to a local slow-but-working almost equivalent inference when all the configured cloud servers aren't available, i.e. when the Internet is offline.
+- [ ] Allow selecting the quantization level, thus being able to balance quality, performance and available computing resources.
+- [ ] More to come, if we get acceptable results from the experimental phase.
 
 
 ## qwen3-rs Description
