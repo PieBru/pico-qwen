@@ -145,3 +145,14 @@ cargo fmt --check
 # Run clippy
 cargo clippy --all-targets --all-features
 ```
+
+## Coding Conventions
+
+## Environment Setup Details
+
+## Solutions to common repo bugs or problems
+
+## Planning Phase Guidelines
+
+### PocketFlow Integration
+- Every time you enter the planning phase for a feature that includes "PocketFlow", you MUST check the most up to date documentation using the "context7" MCP server.

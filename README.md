@@ -1,16 +1,31 @@
 # pico-qwen
 
-**pico-qwen** is an experimental feature-enriched version of [qwen3-rs by Ilya Builuk](https://github.com/reinterpretcat/qwen3-rs) targeting very low-resources systems. Our goals are to explore the feasibility of:
+## The Idea
 
-- [ ] Serve an inference API endpoint that can be somehow useful on systems like MiniPC, SBC, low-power Home Automation servers, etc.
-- [ ] Serve a minimalistic Chat-WebUI that uses the underlying inference API endpoint.
-- [ ] Serve a MCP endpoint with multi-agentic tools like WEB Search, WEB Research, Sequential Thinking, Rumination, etc.
-- [ ] Transparently allow fast LLM inference when online, while resiliently fall back to a local slow-but-working almost equivalent inference when all the configured cloud servers aren't available, i.e. when the Internet is offline.
+**pico-qwen** is an experimental, born as a feature enriched version of [qwen3-rs by Ilya Builuk](https://github.com/reinterpretcat/qwen3-rs), targeting very low-resources systems. Our goals are to explore the feasibility of some additional features, developed as much as possible using Rust:
+- [ ] Serve a low-requirements inference API endpoint that can be installed on systems like MiniPC, SBC, low-power Home Automation servers, etc.
+- [ ] Serve a minimalist Chat-WebUI that uses the underlying inference API endpoint, initially developed in HTML+CSS+JS and then eventually in Rust to solve the X-ref browsers blocking.
+- [ ] Serve a MCP endpoint with multi-agentic tools like WEB Search, WEB Research, Sequential Thinking, Rumination, etc., developed with PocketFlow to maintain a low-resuorces posture.
+- [ ] Transparently allow fast LLM inference served by the cloud when online, while resiliently fall back to a local slow-but-working emergency inference when all the configured cloud servers aren't available, i.e. when the Internet is offline.
 - [ ] Allow selecting the quantization level, thus being able to balance quality, performance and available computing resources.
-- [ ] More to come, if we get acceptable results from the experimental phase.
+- [ ] Allow building for a specific target CPU (i.e. Intel N100, Raspberry PI, etc.), thus exploiting the optimizations available on that system.
+
+And more to come, if the experimental phase has success.
 
 
-## qwen3-rs Description
+## Project Guidelines
+
+- **Architecture.** We keep the original "qwen3-rs" forked project posture and create a new git branch for each new feature, so it will be easy to merge our additional features back on the original project.
+- **Project documentation.** Except the `README.md`, all our project documentation is contained into the `./docs/` directory. So, when we refer to the original project abstractions contained into `qwen3-rs.md`, that document file is located into `./docs/qwen3-rs.md`.
+  - @docs/qwen3-rs.md is a tutorial on our project foundation, that is based on the `qwen3-rs` project, please load it into the coding agent context before planning any new feature.
+- We would like to reuse as much as possible of the project code at any development stage.
+- We prefer to use **Arch Linux**, and any command/feature of our project should work from the command line, as well as a **`systemd`** service managed via `systemctl`.
+- We like minimalist, streamlined tools, CLI and UI. Also please use minimal dependencies.
+- **Agentic features.** Some of our new features use agents and tools, they should be implemented using the [PocketFlow Framework](https://github.com/the-pocket/PocketFlow). Its documentation is contained into https://github.com/The-Pocket/PocketFlow/tree/main/docs/ , its abstractions tutorial is locally into @docs/PocketFlow.md and a cookbook documentation rich of examples is @docs/PocketFlow_Cookbook_40.md
+
+---
+
+# qwen3-rs Description
 
 **qwen3-rs** is an educational Rust project for exploring and running Qwen3 language family models. It is designed to be clear, modular, and approachable for learners, with minimal dependencies and many core algorithms reimplemented from scratch for transparency.
 
