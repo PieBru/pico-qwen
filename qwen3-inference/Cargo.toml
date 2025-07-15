@@ -15,3 +15,7 @@ byteorder = { workspace = true }
 rayon = { workspace = true }
 memmap2 = { workspace = true }
 log = { workspace = true }
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+num_cpus = "1.16"
+tempfile = "3.8"

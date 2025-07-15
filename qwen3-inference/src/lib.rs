@@ -3,7 +3,11 @@
 //! This crate will provide inference functionality for Qwen3 models in the future.
 
 mod configuration;
+mod cpu_optimizations;
+mod extended_config;
+mod extended_transformer;
 mod generation;
+mod quantization;
 mod sampler;
 mod tensor;
 mod tokenizer;
@@ -18,6 +22,11 @@ use crate::generation::{chat, generate};
 use crate::sampler::Sampler;
 use crate::tokenizer::Tokenizer;
 use crate::transformer::TransformerBuilder;
+
+pub use crate::cpu_optimizations::{CpuInfo, CpuVendor, CpuFeature, OptimizationStrategy, CacheBlockingStrategy, ParallelStrategy};
+pub use crate::extended_config::{ExtendedModelConfig, ModelPaths, InferenceParameters, ContextManagement, AdvancedConfig, LogLevel};
+pub use crate::extended_transformer::{ExtendedTransformer, ExtendedTransformerBuilder, MemoryStats, QuantizationSavings};
+pub use crate::quantization::{QuantizationLevel, CpuTarget, MemoryLimits, CloudConfig};
 
 #[derive(Debug, Clone)]
 pub struct InferenceConfig {

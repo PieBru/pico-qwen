@@ -3,6 +3,7 @@ use std::io::Cursor;
 use crate::utils::MemoryMapper;
 use anyhow::{Context, Error, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
+use serde::{Serialize, Deserialize};
 
 /// Magic number for validating checkpoint files
 const CHECKPOINT_MAGIC: i32 = 0x616a6331;
@@ -14,7 +15,7 @@ const HEADER_SIZE: usize = 256;
 const CONFIG_SIZE: usize = 48;
 
 /// Configuration struct for transformer models.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelConfig {
     pub dim: usize,
     pub hidden_dim: usize,
