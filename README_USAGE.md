@@ -45,8 +45,8 @@ cargo run --release -p qwen3-api
 # With custom config
 cargo run --release -p qwen3-api -- --config ~/.config/pico-qwen/api.toml
 
-# With specific port
-cargo run --release -p qwen3-api -- --port 3000
+# List available models without starting server
+cargo run --release -p qwen3-api -- --list-models
 ```
 
 ### API Endpoints
