@@ -55,13 +55,13 @@ cargo run --release -p qwen3-api -- --list-models
 
 #### Health Check
 ```bash
-curl -X GET http://localhost:8080/api/v1/health
+curl -X GET http://localhost:58080/api/v1/health
 ```
 
 #### Server Status
 ```bash
 # Get comprehensive server status including loaded models, memory usage, and statistics
-curl -X GET http://localhost:8080/api/v1/status
+curl -X GET http://localhost:58080/api/v1/status
 ```
 
 **Example Response:**
