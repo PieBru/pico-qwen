@@ -60,6 +60,7 @@ pub struct CloudManager {
     providers: HashMap<String, Arc<dyn CloudProvider>>,
     health_cache: Arc<RwLock<HashMap<String, HealthStatus>>>,
     fallback_to_local: bool,
+    #[allow(dead_code)]
     health_check_interval: Duration,
 }
 

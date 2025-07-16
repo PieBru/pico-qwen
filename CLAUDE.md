@@ -110,7 +110,7 @@ pico-qwen/
 
 ### Model Requirements
 - HuggingFace format: config.json, tokenizer.json, *.safetensors files
-- Supported models: Qwen3-0.6B, Qwen3-4B, Qwen3-8B variants
+- Supported models: Qwen3-0.6B, Qwen3-4B, Qwen3-8B, and DeepSeek-R1-0528-Qwen3-8B (more performant) variants
 - Output format: Custom binary (.bin) + tokenizer files
 
 ### Key Dependencies

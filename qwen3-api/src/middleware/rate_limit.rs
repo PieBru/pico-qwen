@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 
 #[derive(Clone)]
 pub struct RateLimitLayer {
+    #[allow(dead_code)]
     requests_per_minute: u64,
 }
 
@@ -27,6 +28,7 @@ pub struct RateLimitState {
 }
 
 impl RateLimitState {
+    #[allow(dead_code)]
     fn new(requests_per_minute: u64) -> Self {
         Self {
             requests: Arc::new(Mutex::new(HashMap::new())),

@@ -26,6 +26,7 @@ struct AnthropicMessage {
 #[derive(Debug, Deserialize)]
 struct AnthropicResponse {
     content: Vec<AnthropicContent>,
+    #[allow(dead_code)]
     usage: Option<AnthropicUsage>,
 }
 
@@ -38,7 +39,9 @@ struct AnthropicContent {
 
 #[derive(Debug, Deserialize)]
 struct AnthropicUsage {
+    #[allow(dead_code)]
     input_tokens: usize,
+    #[allow(dead_code)]
     output_tokens: usize,
 }
 

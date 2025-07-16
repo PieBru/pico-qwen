@@ -68,6 +68,7 @@ git clone --depth 1 https://huggingface.co/Qwen/Qwen3-1.7B      # ~3.4 GB
 # For larger models (ensure adequate disk space)
 # git clone https://huggingface.co/Qwen/Qwen3-4B      # ~8 GB
 # git clone https://huggingface.co/Qwen/Qwen3-8B      # ~16 GB
+# git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B  # ~16 GB (recommended - more performant than Qwen3-8B)
 ```
 
 ### Export Models
@@ -98,7 +99,7 @@ mkdir -p ~/.config/pico-qwen
 cat > ~/.config/pico-qwen/config.toml << 'EOF'
 [server]
 bind_address = "127.0.0.1"
-port = 8080
+port = 58080
 
 [models]
 directory = "~/HuggingFace"
@@ -188,7 +189,7 @@ docker build -t pico-qwen:latest .
 # Run with volume mounts
 docker run -d \
   --name pico-qwen \
-  -p 8080:8080 \
+  -p 58080:58080 \
   -v ~/HuggingFace:/models \
   -v ~/.config/pico-qwen:/config \
   pico-qwen:latest
@@ -203,7 +204,7 @@ services:
   pico-qwen:
     build: .
     ports:
-      - "8080:8080"
+      - "58080:58080"
     volumes:
       - ~/HuggingFace:/models
       - ~/.config/pico-qwen:/config
@@ -226,7 +227,7 @@ cargo run --release -p qwen3-cli -- cpu-info
 cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin --mode chat --input "Hello"
 
 # Test API server
-curl -X GET http://localhost:8080/api/v1/health
+curl -X GET http://localhost:58080/api/v1/health
 ```
 
 ### Resource Usage Check

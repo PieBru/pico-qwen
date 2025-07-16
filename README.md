@@ -80,7 +80,7 @@ cargo run --release -p qwen3-cli -- inference models/Qwen3-0.6B-int8.bin --mode 
 cargo run --release -p qwen3-api
 
 # Test endpoint
-curl -X POST http://localhost:8080/api/v1/chat \
+curl -X POST http://localhost:58080/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{"model": "Qwen3-0.6B-int8", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
@@ -89,7 +89,7 @@ curl -X POST http://localhost:8080/api/v1/chat \
 ```bash
 # Start web interface
 cargo run --release -p qwen3-web
-# Open http://localhost:3000
+# Open http://localhost:53000
 ```
 
 ## 📋 Documentation
@@ -114,7 +114,7 @@ cargo run --release -p qwen3-web
 # ~/.config/pico-qwen/config.toml
 [server]
 bind_address = "127.0.0.1"
-port = 8080
+port = 58080
 
 [models]
 directory = "~/models"

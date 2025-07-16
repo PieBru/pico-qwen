@@ -29,6 +29,7 @@ struct OpenAiMessage {
 #[derive(Debug, Deserialize)]
 struct OpenAiResponse {
     choices: Vec<OpenAiChoice>,
+    #[allow(dead_code)]
     usage: Option<OpenAiUsage>,
 }
 
@@ -39,8 +40,11 @@ struct OpenAiChoice {
 
 #[derive(Debug, Deserialize)]
 struct OpenAiUsage {
+    #[allow(dead_code)]
     prompt_tokens: usize,
+    #[allow(dead_code)]
     completion_tokens: usize,
+    #[allow(dead_code)]
     total_tokens: usize,
 }
 

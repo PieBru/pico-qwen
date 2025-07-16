@@ -28,10 +28,11 @@ This project builds upon the excellent work of several open-source projects and 
 
 ## Model Source
 
-### [Qwen3](https://huggingface.co/Qwen)
+### [Qwen3](https://huggingface.co/Qwen) and [DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B)
 **Language models**
 - Alibaba's Qwen team for providing the Qwen3 model family
-- Models available: Qwen3-0.6B, Qwen3-1.7B, Qwen3-4B, Qwen3-8B
+- DeepSeek team for providing the enhanced DeepSeek-R1-0528-Qwen3-8B variant
+- Models available: Qwen3-0.6B, Qwen3-1.7B, Qwen3-4B, Qwen3-8B, and DeepSeek-R1-0528-Qwen3-8B (more performant)
 - Open-source models licensed for research and commercial use
 
 ## Ecosystem Dependencies

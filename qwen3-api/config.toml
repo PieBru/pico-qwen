@@ -1,11 +1,11 @@
 [server]
 bind_address = "0.0.0.0"
-port = 8080
+port = 58081
 cors_origins = ["*"]
 request_timeout = 30
 
 [models]
-directory = "./models"
+directory = "./HuggingFace"
 max_loaded_models = 2
 default_quantization = "int8"
 context_window = 4096
