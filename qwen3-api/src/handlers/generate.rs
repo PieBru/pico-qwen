@@ -89,6 +89,13 @@ pub async fn generate_handler(
             },
         };
         
+        // Update model statistics
+        if let Some(mut model) = state.models.get_mut(&request.model) {
+            model.request_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            model.total_tokens_generated.fetch_add(completion_tokens as u64, std::sync::atomic::Ordering::Relaxed);
+            model.last_inference_at = Some(std::time::Instant::now());
+        }
+        
         state.active_requests.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
         Ok(Json(response))
     }

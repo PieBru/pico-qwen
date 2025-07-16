@@ -21,6 +21,10 @@ pub struct LoadedModel {
     pub info: ModelInfo,
     pub transformer: Arc<RwLock<qwen3_inference::ExtendedTransformer>>,
     pub last_used: std::time::Instant,
+    pub loaded_at: std::time::Instant,
+    pub request_count: std::sync::atomic::AtomicU64,
+    pub total_tokens_generated: std::sync::atomic::AtomicU64,
+    pub last_inference_at: Option<std::time::Instant>,
 }
 
 #[derive(Debug, Clone)]
@@ -65,6 +69,10 @@ impl AppState {
             info: info.clone(),
             transformer: Arc::new(RwLock::new(transformer)),
             last_used: std::time::Instant::now(),
+            loaded_at: std::time::Instant::now(),
+            request_count: std::sync::atomic::AtomicU64::new(0),
+            total_tokens_generated: std::sync::atomic::AtomicU64::new(0),
+            last_inference_at: None,
         };
 
         self.models.insert(model_id.to_string(), loaded_model);
@@ -88,6 +96,14 @@ impl AppState {
                 info: loaded_model.info.clone(),
                 transformer: loaded_model.transformer.clone(),
                 last_used: loaded_model.last_used,
+                loaded_at: loaded_model.loaded_at,
+                request_count: std::sync::atomic::AtomicU64::new(
+                    loaded_model.request_count.load(std::sync::atomic::Ordering::Relaxed)
+                ),
+                total_tokens_generated: std::sync::atomic::AtomicU64::new(
+                    loaded_model.total_tokens_generated.load(std::sync::atomic::Ordering::Relaxed)
+                ),
+                last_inference_at: loaded_model.last_inference_at,
             })
         })
     }

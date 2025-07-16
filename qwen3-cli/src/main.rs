@@ -11,11 +11,11 @@ fn export_subcommand() -> Command {
     Command::new("export")
         .about("Export Qwen3 model from HuggingFace format to custom binary format")
         .arg(Arg::new("MODEL_PATH")
-            .help("Path to the HuggingFace model directory (containing config.json, *.safetensors, tokenizer.json)")
+            .help("Path to the HuggingFace model directory (must contain config.json, tokenizer.json, and .safetensors files)")
             .required(true)
             .index(1))
         .arg(Arg::new("OUTPUT_PATH")
-            .help("Output path for the binary model file (without extension)")
+            .help("Output path for the .bin model file (including filename, e.g., ~/HuggingFace/Qwen3-0.6B-int8)")
             .required(true)
             .index(2))
         .arg(Arg::new("group-size")
@@ -32,7 +32,7 @@ fn inference_subcommand() -> Command {
         .about("Qwen3 inference in Rust")
         .arg(
             Arg::new("checkpoint")
-                .help("Model checkpoint file")
+                .help("Path to the .bin model file (e.g., ~/HuggingFace/Qwen3-0.6B-int8.bin)")
                 .required(true)
                 .index(1),
         )
@@ -112,8 +112,8 @@ fn models_subcommand() -> Command {
                 .short('d')
                 .long("directory")
                 .value_name("PATH")
-                .help("Directory to search for models")
-                .default_value("./HuggingFace"),
+                .help("Directory to search for .bin model files")
+                .default_value("~/HuggingFace"),
         )
         .arg(
             Arg::new("format")

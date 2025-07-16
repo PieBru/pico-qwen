@@ -4,25 +4,26 @@
 
 ### Basic Inference
 ```bash
-# Interactive chat mode
-cargo run --release -p qwen3-cli -- inference model.bin -m chat
+# Interactive chat mode - use full path to .bin file
+./target/release/qwen3 inference /home/user/HuggingFace/Qwen3-0.6B-int8.bin -m chat
 
 # Generate mode with prompt
-cargo run --release -p qwen3-cli -- inference model.bin -m generate -i "Your prompt here"
+cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin -m generate -i "Your prompt here"
 
 # With custom parameters
-cargo run --release -p qwen3-cli -- inference model.bin -t 0.7 -p 0.8 -s 42
+cargo run --release -p qwen3-cli -- inference ./models/Qwen3-0.6B-int8.bin -t 0.7 -p 0.8 -s 42
 ```
 
 ### CLI Options
 ```bash
-# Export models
-cargo run --release -p qwen3-cli -- export /path/to/huggingface/model /path/to/output.bin --group-size 64
+# Export models - specify full directory path and output filename
+# Directory must contain: config.json, tokenizer.json, *.safetensors files
+cargo run --release -p qwen3-cli -- export ~/Downloads/Qwen3-0.6B ~/HuggingFace/Qwen3-0.6B-int8 --group-size 64
 
-# List available models
+# List available models - scans directory for .bin files
 cargo run --release -p qwen3-cli -- models
 # With options:
-cargo run --release -p qwen3-cli -- models --directory ./HuggingFace --format json
+cargo run --release -p qwen3-cli -- models --directory ~/HuggingFace --format json
 # Formats: table|json|list
 
 # Available options:
@@ -46,6 +47,7 @@ cargo run --release -p qwen3-api
 cargo run --release -p qwen3-api -- --config ~/.config/pico-qwen/api.toml
 
 # List available models without starting server
+# This scans the models directory specified in config.toml
 cargo run --release -p qwen3-api -- --list-models
 ```
 
@@ -54,6 +56,55 @@ cargo run --release -p qwen3-api -- --list-models
 #### Health Check
 ```bash
 curl -X GET http://localhost:8080/api/v1/health
+```
+
+#### Server Status
+```bash
+# Get comprehensive server status including loaded models, memory usage, and statistics
+curl -X GET http://localhost:8080/api/v1/status
+```
+
+**Example Response:**
+```json
+{
+  "uptime": {
+    "secs": 3600,
+    "nanos": 0
+  },
+  "active_requests": 0,
+  "loaded_models": [
+    {
+      "id": "Qwen3-0.6B-int8",
+      "size_mb": 1245.7,
+      "loaded_at": {
+        "secs": 1800,
+        "nanos": 0
+      },
+      "last_used": {
+        "secs": 300,
+        "nanos": 0
+      },
+      "inference_stats": {
+        "total_requests": 42,
+        "total_tokens_generated": 1847,
+        "avg_tokens_per_sec": 0.0,
+        "last_inference_at": {
+          "secs": 300,
+          "nanos": 0
+        }
+      },
+      "memory_usage_mb": 1619.4
+    }
+  ],
+  "total_memory_mb": 1619.4,
+  "system_info": {
+    "cpu_cores": 8,
+    "total_memory_gb": 16.0,
+    "available_memory_gb": 10.2,
+    "used_memory_gb": 5.8,
+    "memory_usage_percent": 36.25
+  }
+}
 ```
 
 #### Model Management
@@ -73,6 +124,10 @@ curl -X GET http://localhost:8080/api/v1/models/Qwen3-0.6B-int8
 
 #### Chat Completion
 ```bash
+# First, load the model (required before first use)
+curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+
+# Then use it for chat
 curl -X POST http://localhost:8080/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{
@@ -88,6 +143,9 @@ curl -X POST http://localhost:8080/api/v1/chat \
 
 #### Text Generation
 ```bash
+# Load model first (if not already loaded)
+curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+
 curl -X POST http://localhost:8080/api/v1/generate \
   -H "Content-Type: application/json" \
   -d '{
@@ -100,6 +158,9 @@ curl -X POST http://localhost:8080/api/v1/generate \
 
 #### Streaming Responses
 ```bash
+# Load model first
+curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+
 curl -X POST http://localhost:8080/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{
@@ -110,6 +171,25 @@ curl -X POST http://localhost:8080/api/v1/chat \
     "stream": true
   }'
 ```
+
+## Important Notes About File Paths
+
+### Model Files (.bin files)
+- **Location**: Store your exported models in `~/HuggingFace/` directory
+- **Format**: Files must end with `.bin` extension (e.g., `Qwen3-0.6B-int8.bin`)
+- **Naming**: Use descriptive names like `Qwen3-0.6B-int8.bin`, `DeepSeek-R1-0528-Qwen3-8B-int8.bin`
+
+### Export Workflow
+1. **Download HuggingFace model** to a directory (e.g., `~/Downloads/Qwen3-0.6B/`)
+2. **Verify files**: Directory must contain `config.json`, `tokenizer.json`, and `.safetensors` files
+3. **Export**: Run export command to create `.bin` file
+4. **Use**: Use the generated `.bin` file path in CLI or API
+
+### API Workflow
+1. **Start API server**: `cargo run --release -p qwen3-api`
+2. **List models**: `curl http://localhost:8080/api/v1/models`
+3. **Load model**: `curl -X POST http://localhost:8080/api/v1/models/YOUR_MODEL_NAME/load`
+4. **Use model**: Send requests to `/v1/chat` or `/v1/generate`
 
 ## WebUI Usage
 

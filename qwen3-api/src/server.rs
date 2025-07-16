@@ -12,7 +12,7 @@ use tower_http::{
 use tracing::info;
 
 use crate::{config::Config, state::AppState};
-use crate::handlers::{chat, generate, models, health, openai};
+use crate::handlers::{chat, generate, models, health, openai, status};
 
 pub struct Server {
     config: Config,
@@ -50,6 +50,7 @@ impl Server {
 
         Router::new()
             .route("/api/v1/health", get(health::health_check))
+            .route("/api/v1/status", get(status::server_status))
             .route("/api/v1/models", get(models::list_models))
             .route("/api/v1/models/:model_id/load", axum::routing::post(models::load_model))
             .route("/api/v1/models/:model_id/unload", axum::routing::post(models::unload_model))
