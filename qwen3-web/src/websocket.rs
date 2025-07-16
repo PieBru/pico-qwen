@@ -39,7 +39,7 @@ pub async fn websocket_handler(
     ws.on_upgrade(move |socket| handle_websocket(socket, config))
 }
 
-async fn handle_websocket(mut socket: WebSocket, config: Config) {
+async fn handle_websocket(socket: WebSocket, config: Config) {
     let (mut sender, mut receiver) = socket.split();
     
     while let Some(Ok(msg)) = receiver.next().await {

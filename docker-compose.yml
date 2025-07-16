@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  pico-qwen-api:
+    image: pico-qwen:latest
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./models:/opt/pico-qwen/models
+      - ./config:/opt/pico-qwen/config:ro
+      - ./logs:/opt/pico-qwen/logs
+    environment:
+      - RUST_LOG=info
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  pico-qwen-web:
+    image: pico-qwen:latest
+    build: .
+    command: ["/opt/pico-qwen/bin/qwen3-web", "--bind-address", "0.0.0.0", "--port", "3000", "--api-url", "http://pico-qwen-api:8080"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      - pico-qwen-api
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - pico-qwen-api
+      - pico-qwen-web
+    restart: unless-stopped
+
+volumes:
+  pico-qwen-models:
+  pico-qwen-logs:

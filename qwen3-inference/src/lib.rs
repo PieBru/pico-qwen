@@ -4,6 +4,8 @@
 
 pub mod configuration;
 mod cpu_optimizations;
+pub mod cpu;
+pub mod cloud;
 mod extended_config;
 pub mod extended_transformer;
 pub mod generation;

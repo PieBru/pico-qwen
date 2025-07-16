@@ -1,0 +1,43 @@
+# Docker configuration for pico-qwen
+[server]
+bind_address = "0.0.0.0"
+port = 8080
+
+[models]
+directory = "/opt/pico-qwen/models"
+default_model = "Qwen3-0.6B-int8.bin"
+max_loaded_models = 3
+context_window = 4096
+
+[limits]
+max_memory_mb = 2048
+max_tokens = 512
+rate_limit = 100
+
+[logging]
+level = "info"
+file = "/opt/pico-qwen/logs/pico-qwen.log"
+rotate = true
+max_file_size = "100MB"
+max_files = 5
+
+[cloud]
+providers = [
+    {
+        name = "openai",
+        api_key = "${OPENAI_API_KEY}",
+        base_url = "https://api.openai.com/v1",
+        model = "gpt-3.5-turbo",
+        max_tokens = 512,
+        temperature = 0.7,
+        timeout = 30
+    }
+]
+fallback_to_local = true
+health_check_interval = 60
+
+[cpu]
+optimization_level = "auto"
+use_simd = true
+cache_strategy = "l3"
+parallel_strategy = "rayon"

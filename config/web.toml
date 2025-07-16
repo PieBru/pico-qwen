@@ -1,0 +1,19 @@
+# WebUI configuration
+[server]
+bind_address = "127.0.0.1"
+port = 3000
+
+[api]
+url = "http://localhost:8080"
+timeout = 30
+
+[ui]
+title = "Pico-Qwen"
+theme = "dark"
+enable_notifications = true
+enable_offline = true
+
+[cache]
+enable_service_worker = true
+max_cache_size = "50MB"
+cache_duration = "1d"

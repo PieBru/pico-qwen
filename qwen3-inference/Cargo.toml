@@ -19,3 +19,19 @@ serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 num_cpus = "1.16"
 tempfile = "3.8"
+
+# Phase 5: Cloud/Edge
+tokio = { workspace = true }
+reqwest = { workspace = true }
+async-trait = { workspace = true }
+humantime-serde = "1.1"
+
+# Phase 6: CPU optimization
+cpufeatures = { workspace = true }
+raw-cpuid = { workspace = true }
+
+# Phase 7: Service management
+signal-hook = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-service = { workspace = true }

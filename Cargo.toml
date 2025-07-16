@@ -29,6 +29,19 @@ memmap2 = "0.9"
 log = "0.4"
 env_logger = "0.10"
 
+# Phase 5: Cloud/Edge dependencies
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
+
+# Phase 6: CPU optimization
+cpufeatures = "0.2"
+raw-cpuid = "11.0"
+
+# Phase 7: Service management
+windows-service = "0.6"
+signal-hook = "0.3"
+
 qwen3-export = { path = "qwen3-export" }
 qwen3-inference = { path = "qwen3-inference" }
 
