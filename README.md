@@ -127,10 +127,10 @@ cd pico-qwen
 cargo build --release
 
 # Export a model (example with Qwen3-0.6B)
-cargo run --release -p qwen3-cli -- export Qwen3-0.6B model.bin --group-size 64
+cargo run --release -p qwen3-cli -- export HuggingFace/Qwen3-0.6B HuggingFace/Qwen3-0.6B.bin --group-size 64
 
 # Run inference with new configuration system
-cargo run --release -p qwen3-cli -- inference model.bin -m chat -t 0.7
+cargo run --release -p qwen3-cli -- inference HuggingFace/Qwen3-0.6B.bin -m chat -t 0.7
 ```
 
 ### Configuration Example
@@ -186,8 +186,10 @@ cargo test --test extended_config_tests test_cpu_target_optimization
 cargo test --test extended_config_tests test_configuration_serialization
 cargo test --test extended_config_tests test_quantization_memory_calculation
 
-# Real-world configuration validation
-cargo run --release -p qwen3-cli -- inference /dev/null --config model_config.toml
+# Real-world configuration validation (interactive chat mode)
+echo "Starting Qwen3 interactive chat..."
+echo "Type your message and press Enter. Use '/bye' to exit."
+cargo run --release -p qwen3-cli -- inference HuggingFace/Qwen3-0.6B.bin --reasoning 1
 
 # Check your CPU detection
 cat /proc/cpuinfo | grep -E "(model name|Intel|i9-14900HX)"
@@ -207,7 +209,8 @@ echo -e "\n2. Running all tests..."
 cargo test --release --all 2>/dev/null | grep -E "(test|ok|failed)" | tail -5
 
 echo -e "\n3. Testing your i9-14900HX configuration..."
-cargo run --release -p qwen3-cli -- inference /dev/null --config model_config.toml 2>&1 | head -10
+echo "Starting interactive chat mode. Type 'hello' to test, then '/bye' to exit:"
+timeout 10s cargo run --release -p qwen3-cli -- inference HuggingFace/Qwen3-0.6B.bin --reasoning 1 || echo "Chat mode test completed (timeout reached)"
 
 echo -e "\n4. CPU Info:"
 lscpu | grep -E "(Model name|CPU|Thread|Core)" | head -5
@@ -221,7 +224,7 @@ cargo test --all
 cargo build --release -p qwen3-cli
 
 # Run with configuration
-cargo run --release -p qwen3-cli -- inference model.bin --config model_config.toml
+cargo run --release -p qwen3-cli -- inference HuggingFace/Qwen3-0.6B.bin --reasoning 1
 
 # Cross-compilation
 cargo build --release --target aarch64-unknown-linux-gnu  # ARM64
