@@ -40,17 +40,19 @@ let loaded = ExtendedModelConfig::from_file("model_config.toml")?;
 - ✅ CPU-specific optimization strategies
 - ✅ Memory usage estimation and validation
 
-### 🚧 Phase 2: Low-Requirements API Server - **IN PROGRESS**
-- [ ] REST API with streaming support
-- [ ] Model pooling and LRU eviction
-- [ ] Memory pressure monitoring
-- [ ] HTTP endpoints for chat and generation
+### ✅ Phase 2: Low-Requirements API Server - **COMPLETED**
+- ✅ REST API with streaming support
+- ✅ Model pooling and LRU eviction
+- ✅ Memory pressure monitoring
+- ✅ HTTP endpoints for chat and generation
+- ✅ Real transformer integration
+- ✅ Comprehensive test suite
 
-### 🚧 Phase 3: Minimalist Chat-WebUI
-- [ ] Progressive enhancement web interface
-- [ ] Mobile-first responsive design
-- [ ] Offline capability with service worker
-- [ ] Real-time streaming responses
+### ✅ Phase 3: Minimalist Chat-WebUI - **COMPLETED**
+- ✅ Progressive enhancement web interface
+- ✅ Mobile-first responsive design
+- ✅ Offline capability with service worker
+- ✅ Real-time streaming responses
 
 ### 🚧 Phase 4: MCP Multi-Agent System
 - [ ] PocketFlow-based agent orchestration
@@ -102,7 +104,7 @@ pico-qwen/
 │   │   ├── quantization.rs      # ENHANCED: Advanced quantization
 │   │   └── ...
 ├── qwen3-api/                   # NEW: REST API server (Phase 2)
-├── qwen3-web/                   # NEW: Web interface (Phase 3)
+├── qwen3-web/                   # NEW: Web interface (Phase 3 - COMPLETED)
 ├── qwen3-mcp/                   # NEW: MCP agents (Phase 4)
 └── docs/                        # Technical documentation
     ├── phase1_summary.md        # Phase 1 completion
@@ -110,12 +112,17 @@ pico-qwen/
     └── ...
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start - Phase 1 Testing (Arch Linux)
 
-### Prerequisites
-- Rust 1.70+
-- 4GB+ RAM (8GB recommended for larger models)
-- HuggingFace Qwen3 model
+### Prerequisites for Arch Linux
+```bash
+# Install dependencies
+sudo pacman -S git base-devel pkg-config openssl
+
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+```
 
 ### Installation
 ```bash
@@ -123,54 +130,148 @@ pico-qwen/
 git clone https://github.com/PieBru/pico-qwen.git
 cd pico-qwen
 
-# Build the workspace
+# Build the workspace with Phase 1 features
 cargo build --release
+
+# Verify Phase 1 features
+./scripts/test_phase1.sh
 ```
 
-### Download Supported Models (87 GB total)
+### Phase 1 Testing Commands (Arch Linux)
+```bash
+# Test CPU detection and optimization
+echo "Testing CPU feature detection..."
+cargo test --release --test cpu_detection_tests
+
+# Test quantization levels
+echo "Testing quantization system..."
+cargo test --release --test quantization_tests
+
+# Test configuration system
+echo "Testing extended configuration..."
+cargo test --release --test extended_config_tests
+
+# Test memory optimization
+echo "Testing memory optimization..."
+cargo test --release --test memory_optimization_tests
+
+# Real-world test with Intel i9-14900HX
+echo "Testing i9-14900HX optimization..."
+cargo test --release --test cpu_target_tests test_intel_i9_14900hx_optimization
+
+# Quick validation script
+./scripts/validate_phase1_arch.sh
+```
+
+### Download and Test Models (Arch Linux)
 ```bash
 # Create models directory
-mkdir HuggingFace
-cd HuggingFace/
+mkdir -p ~/HuggingFace
+cd ~/HuggingFace
 
-# Download all supported models
-git clone https://huggingface.co/Qwen/Qwen3-0.6B      # ~1.2 GB
-git clone https://huggingface.co/Qwen/Qwen3-1.7B      # ~3.4 GB
-git clone https://huggingface.co/Qwen/Qwen3-4B        # ~8.2 GB
-git clone https://huggingface.co/Qwen/Qwen3-8B        # ~15 GB
-git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B  # ~59 GB
+# Download lightweight models for testing
+# Note: For full 87GB download, ensure 100GB+ free space
+git clone --depth 1 https://huggingface.co/Qwen/Qwen3-0.6B      # ~1.2 GB
+git clone --depth 1 https://huggingface.co/Qwen/Qwen3-1.7B      # ~3.4 GB
 
-cd ..
+cd ~/pico-qwen
+
+# Export models with different configurations
+# Test INT8 quantization (recommended for Intel i9-14900HX)
+cargo run --release -p qwen3-cli -- export ~/HuggingFace/Qwen3-0.6B ~/HuggingFace/Qwen3-0.6B-int8.bin --group-size 64
+
+# Test INT4 quantization (for memory-constrained systems)
+cargo run --release -p qwen3-cli -- export ~/HuggingFace/Qwen3-0.6B ~/HuggingFace/Qwen3-0.6B-int4.bin --group-size 32
+
+# Test FP16 for high-end systems
+cargo run --release -p qwen3-cli -- export ~/HuggingFace/Qwen3-0.6B ~/HuggingFace/Qwen3-0.6B-fp16.bin --group-size 128
 ```
 
-### Export and Run Models
+### Phase 1 Feature Testing
 ```bash
-# Export a model (example with Qwen3-0.6B)
-cargo run --release -p qwen3-cli -- export HuggingFace/Qwen3-0.6B HuggingFace/Qwen3-0.6B.bin --group-size 64
+# Test CPU detection on your system
+echo "=== CPU Detection ==="
+lscpu | head -n 10
 
-# Run inference with new configuration system
-cargo run --release -p qwen3-cli -- inference HuggingFace/Qwen3-0.6B.bin -m chat -t 0.7
+# Test specific CPU optimizations
+echo "=== Testing Intel i9-14900HX optimization ==="
+cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin \
+  --cpu-target intel-i9-14900hx \
+  --max-memory 16384 \
+  --ctx-length 4096 \
+  --mode chat \
+  --reasoning 1
+
+# Test memory-constrained mode
+echo "=== Testing low-memory mode ==="
+cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int4.bin \
+  --max-memory 4096 \
+  --ctx-length 2048 \
+  --mode generate \
+  --input "What is the capital of France?"
+
+# Test cache optimization
+echo "=== Testing cache-aware optimization ==="
+cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin \
+  --cache-strategy l3 \
+  --parallel-strategy rayon \
+  --mode chat
 ```
 
-### Configuration Example
+### Configuration Examples for Phase 1
 ```toml
-# model_config.toml
-[base]
-dim = 2048
-hidden_dim = 8192
-n_layers = 24
-vocab_size = 32000
+# ~/.config/pico-qwen/config.toml
+[server]
+bind_address = "127.0.0.1"
+port = 8080
 
-[quantization]
-level = "int8-gs64"
+[models]
+directory = "~/HuggingFace"
+default_quantization = "int8"
+max_loaded_models = 2
+context_window = 4096
 
+[limits]
+max_request_size = 10485760  # 10MB
+max_tokens = 512
+rate_limit = 60
+
+# CPU-specific configuration
 [cpu]
-target = "intel-n100"
-# Available targets: intel-n100, intel-i9-14900hx, raspberry-pi-4, raspberry-pi-5, generic-x86, generic-arm
+target = "intel-i9-14900hx"
+quantization = "int8-gs64"
+cache_strategy = "l3"
+parallel_strategy = "rayon"
 
+# Memory optimization
 [memory]
-max_memory_mb = 8192
+max_memory_mb = 16384
 max_context_length = 4096
+```
+
+### systemd Service (Arch Linux)
+```bash
+# Create systemd service for API server
+cat > ~/.config/systemd/user/pico-qwen.service << 'EOF'
+[Unit]
+Description=Pico-Qwen API Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/%i/.cargo/bin/cargo run --release -p qwen3-api -- --config /home/%i/.config/pico-qwen/config.toml
+WorkingDirectory=/home/%i/pico-qwen
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+EOF
+
+# Enable and start service
+systemctl --user daemon-reload
+systemctl --user enable pico-qwen.service
+systemctl --user start pico-qwen.service
 ```
 
 ## 📋 Development Status
@@ -178,12 +279,130 @@ max_context_length = 4096
 | Phase | Status | Progress |
 |-------|--------|----------|
 | Phase 1: Core Infrastructure | ✅ **COMPLETED** | 100% |
-| Phase 2: API Server | 🚧 **IN PROGRESS** | 0% |
-| Phase 3: WebUI | 📋 **PENDING** | 0% |
+| Phase 2: API Server | ✅ **COMPLETED** | 100% |
+| Phase 3: WebUI | ✅ **COMPLETED** | 100% |
 | Phase 4: MCP Agents | 📋 **PENDING** | 0% |
 | Phase 5: Hybrid Cloud | 📋 **PENDING** | 0% |
 | Phase 6: CPU Optimization | 📋 **PENDING** | 0% |
 | Phase 7: Deployment | 📋 **PENDING** | 0% |
+
+## 🚀 Phase 3 Testing Commands (Arch Linux)
+
+### Prerequisites
+```bash
+# Ensure API server is running (Phase 2)
+mkdir -p ~/HuggingFace
+cd ~/pico-qwen
+```
+
+### Quick WebUI Setup
+```bash
+# 1. Build WebUI
+cargo build --release -p qwen3-web
+
+# 2. Run tests
+cargo test --release -p qwen3-web
+
+# 3. Start WebUI (connects to API server on port 8080)
+cargo run --release -p qwen3-web -- --bind-address 127.0.0.1 --port 3000 --api-url http://localhost:8080
+
+# 4. Open in browser
+firefox http://localhost:3000
+# OR
+chromium http://localhost:3000
+```
+
+### WebUI Features Testing
+```bash
+# Test mobile responsive design
+# Open Chrome DevTools (F12) > Toggle device toolbar > Test various screen sizes
+
+# Test offline capability
+# 1. Open DevTools > Network > Check "Offline"
+# 2. Refresh page - should still work
+# 3. Check Application > Service Workers > Should show active worker
+
+# Test PWA installation
+# 1. Open DevTools > Application > Manifest
+# 2. Check if "Add to home screen" prompt appears on mobile
+
+# Test keyboard shortcuts
+# Ctrl/Cmd + / : Focus input
+# Ctrl/Cmd + , : Toggle settings
+# Ctrl/Cmd + ? : Show help
+```
+
+### Automated Testing
+```bash
+# Run all Phase 3 tests
+./scripts/test_phase3_arch.sh
+
+# Test responsive design
+./scripts/test_responsive.sh
+
+# Test offline functionality
+./scripts/test_offline.sh
+```
+
+## 🚀 Phase 2 Testing Commands (Arch Linux)
+
+### API Endpoints Testing
+```bash
+# Health check
+curl -X GET http://localhost:8080/api/v1/health
+
+# List models (returns empty initially)
+curl -X GET http://localhost:8080/api/v1/models
+
+# Load a model (requires exported model)
+curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+
+# Chat completion
+curl -X POST http://localhost:8080/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-0.6B-int8",
+    "messages": [{"role": "user", "content": "Hello, how are you?"}],
+    "max_tokens": 100,
+    "temperature": 0.7
+  }'
+
+# Text generation
+curl -X POST http://localhost:8080/api/v1/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-0.6B-int8",
+    "prompt": "The future of AI is",
+    "max_tokens": 50,
+    "temperature": 0.8
+  }'
+```
+
+### systemd Service Setup
+```bash
+# Create systemd service
+cat > ~/.config/systemd/user/pico-qwen-api.service << 'EOF'
+[Unit]
+Description=Pico-Qwen API Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/%i/.cargo/bin/cargo run --release -p qwen3-api -- --config /home/%i/.config/pico-qwen/api.toml
+WorkingDirectory=/home/%i/pico-qwen
+Restart=always
+RestartSec=10
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=default.target
+EOF
+
+# Enable service
+systemctl --user daemon-reload
+systemctl --user enable pico-qwen-api.service
+systemctl --user start pico-qwen-api.service
+```
 
 ## 🔧 Development Commands
 

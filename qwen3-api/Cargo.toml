@@ -1,0 +1,43 @@
+[package]
+name = "qwen3-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core dependencies
+anyhow = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP server
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "limit"] }
+hyper = "1.0"
+
+# State management
+dashmap = "5.5"
+uuid = { version = "1.0", features = ["v4"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Configuration
+config = "0.14"
+clap = { version = "4.0", features = ["derive"] }
+
+# Streaming futures
+futures = "0.3"
+tokio-stream = "0.1"
+
+# Internal dependencies
+qwen3-inference = { path = "../qwen3-inference" }
+
+toml = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+reqwest = "0.12"
+tower = { version = "0.4", features = ["util"] }

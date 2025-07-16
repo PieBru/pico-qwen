@@ -3,7 +3,9 @@ resolver = "2"
 members = [
     "qwen3-cli",
     "qwen3-export",
-    "qwen3-inference"
+    "qwen3-inference",
+    "qwen3-api",
+    "qwen3-web"
 ]
 
 [workspace.package]

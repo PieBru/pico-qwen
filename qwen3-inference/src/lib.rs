@@ -5,13 +5,13 @@
 pub mod configuration;
 mod cpu_optimizations;
 mod extended_config;
-mod extended_transformer;
-mod generation;
-mod quantization;
-mod sampler;
-mod tensor;
-mod tokenizer;
-mod transformer;
+pub mod extended_transformer;
+pub mod generation;
+pub mod quantization;
+pub mod sampler;
+pub mod tensor;
+pub mod tokenizer;
+pub mod transformer;
 mod utils;
 
 use anyhow::Result;
