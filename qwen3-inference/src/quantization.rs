@@ -3,7 +3,6 @@
 //! Provides multiple quantization levels with configurable group sizes
 //! and dynamic quantization capabilities.
 
-use crate::tensor::QuantizedTensor;
 use serde::{Serialize, Deserialize};
 
 /// Supported quantization levels for memory optimization
@@ -137,7 +136,7 @@ impl CpuTarget {
                 }
             }
             
-            use std::arch::x86_64::*;
+            
             
             // Check for Intel features
             if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("avx512f") {

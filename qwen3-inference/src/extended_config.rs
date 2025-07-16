@@ -93,7 +93,7 @@ pub struct AdvancedConfig {
 }
 
 /// Logging levels for the inference engine
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum LogLevel {
     Error,
     Warning,
@@ -224,6 +224,15 @@ impl ExtendedModelConfig {
             .with_context(|| format!("Failed to write config file: {:?}", path))?;
         
         Ok(())
+    }
+
+    /// Updates the configuration with a closure
+    pub fn update_config<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(&mut Self),
+    {
+        f(&mut self);
+        self
     }
 }
 

@@ -109,7 +109,8 @@ impl CpuInfo {
     }
 
     /// Creates a generic fallback for unknown architectures
-    fn generic_fallback() -> Self {
+    #[allow(dead_code)]
+    pub(crate) fn generic_fallback() -> Self {
         Self {
             vendor: CpuVendor::Unknown,
             features: Vec::new(),
@@ -154,7 +155,7 @@ impl CpuInfo {
     }
 
     /// Estimates total system memory in MB
-    fn estimate_total_memory_mb(&self) -> usize {
+    pub fn estimate_total_memory_mb(&self) -> usize {
         // Try to read from /proc/meminfo on Linux
         #[cfg(target_os = "linux")]
         {
@@ -291,7 +292,7 @@ pub struct CacheInfo {
 #[cfg(target_arch = "x86_64")]
 fn detect_x86_64() -> CpuInfo {
     let mut features = Vec::new();
-    let mut vendor = CpuVendor::Unknown;
+    let vendor;
     
     #[cfg(target_arch = "x86_64")]
     {

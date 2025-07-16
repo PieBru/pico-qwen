@@ -4,7 +4,7 @@ use std::fs::File;
 use std::slice;
 
 #[derive(Debug)]
-pub(crate) struct MemoryMapper {
+pub struct MemoryMapper {
     mmap: Mmap,
     offset: usize,
 }
