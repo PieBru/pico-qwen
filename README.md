@@ -125,7 +125,26 @@ cd pico-qwen
 
 # Build the workspace
 cargo build --release
+```
 
+### Download Supported Models (87 GB total)
+```bash
+# Create models directory
+mkdir HuggingFace
+cd HuggingFace/
+
+# Download all supported models
+git clone https://huggingface.co/Qwen/Qwen3-0.6B      # ~1.2 GB
+git clone https://huggingface.co/Qwen/Qwen3-1.7B      # ~3.4 GB
+git clone https://huggingface.co/Qwen/Qwen3-4B        # ~8.2 GB
+git clone https://huggingface.co/Qwen/Qwen3-8B        # ~15 GB
+git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B  # ~59 GB
+
+cd ..
+```
+
+### Export and Run Models
+```bash
 # Export a model (example with Qwen3-0.6B)
 cargo run --release -p qwen3-cli -- export HuggingFace/Qwen3-0.6B HuggingFace/Qwen3-0.6B.bin --group-size 64
 
