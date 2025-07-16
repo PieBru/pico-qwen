@@ -11,9 +11,10 @@ Phase 1 has been successfully completed, providing the foundation for all subseq
 ### ✅ Completed Features
 - **Extended Model Configuration** - Advanced configuration with quantization levels and CPU-specific optimizations
 - **Advanced Quantization System** - Support for INT4, INT8, FP16, FP32 with configurable group sizes
-- **CPU Feature Detection** - Runtime CPU optimization for Intel N100, Raspberry Pi 4/5, and generic processors
+- **CPU Feature Detection** - Runtime CPU optimization for Intel N100, Intel i9-14900HX, Raspberry Pi 4/5, and generic processors
 - **Extended Transformer Support** - Configuration-based transformer loading with optimization
 - **Comprehensive Testing** - Well-tested infrastructure components
+- **High-end CPU Support** - Added Intel i9-14900HX (24 cores, 32 threads, 36MB cache) with FP16 optimization
 
 ### 🔧 New Configuration System
 ```rust
@@ -24,6 +25,7 @@ let config = ExtendedModelConfig::new(model_config);
 
 // Target specific hardware
 let config = ExtendedModelConfig::for_cpu_target(model_config, CpuTarget::RaspberryPi4);
+let config = ExtendedModelConfig::for_cpu_target(model_config, CpuTarget::IntelI9_14900HX);
 
 // Save/load configurations
 config.save_to_file("model_config.toml")?;
@@ -145,6 +147,7 @@ level = "int8-gs64"
 
 [cpu]
 target = "intel-n100"
+# Available targets: intel-n100, intel-i9-14900hx, raspberry-pi-4, raspberry-pi-5, generic-x86, generic-arm
 
 [memory]
 max_memory_mb = 8192
@@ -165,8 +168,54 @@ max_context_length = 4096
 
 ## 🔧 Development Commands
 
+### Phase 1 Testing Commands (Arch Linux)
 ```bash
-# Development workflow
+# Build and test Phase 1 features
+cargo build --release --all
+cargo test --release --all
+
+# Test specific Phase 1 features
+cargo test --test integration_tests test_quantization_levels
+cargo test --test integration_tests test_cpu_target_detection
+cargo test --test integration_tests test_cpu_target_parsing
+cargo test --test integration_tests test_memory_limits_calculation
+cargo test --test integration_tests test_cpu_info_detection
+
+# CPU and configuration testing
+cargo test --test extended_config_tests test_cpu_target_optimization
+cargo test --test extended_config_tests test_configuration_serialization
+cargo test --test extended_config_tests test_quantization_memory_calculation
+
+# Real-world configuration validation
+cargo run --release -p qwen3-cli -- inference /dev/null --config model_config.toml
+
+# Check your CPU detection
+cat /proc/cpuinfo | grep -E "(model name|Intel|i9-14900HX)"
+lscpu | grep -E "(Model name|CPU|Thread|Core|Cache)"
+```
+
+### Quick Phase 1 Validation Script
+```bash
+#!/bin/bash
+cd /run/media/piero/NVMe-4TB/Piero/GitForked/pico-qwen
+
+echo "=== Phase 1 Feature Testing ==="
+echo "1. Building workspace..."
+cargo build --release --all
+
+echo -e "\n2. Running all tests..."
+cargo test --release --all 2>/dev/null | grep -E "(test|ok|failed)" | tail -5
+
+echo -e "\n3. Testing your i9-14900HX configuration..."
+cargo run --release -p qwen3-cli -- inference /dev/null --config model_config.toml 2>&1 | head -10
+
+echo -e "\n4. CPU Info:"
+lscpu | grep -E "(Model name|CPU|Thread|Core)" | head -5
+
+echo -e "\n=== Phase 1 Testing Complete ==="
+```
+
+### Development workflow
 cargo check --all
 cargo test --all
 cargo build --release -p qwen3-cli
@@ -177,7 +226,6 @@ cargo run --release -p qwen3-cli -- inference model.bin --config model_config.to
 # Cross-compilation
 cargo build --release --target aarch64-unknown-linux-gnu  # ARM64
 cargo build --release --target x86_64-unknown-linux-musl  # x86_64
-```
 
 ## 📝 Project Guidelines
 

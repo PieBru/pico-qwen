@@ -1,0 +1,17 @@
+# model_config.toml
+[base]
+dim = 2048
+hidden_dim = 8192
+n_layers = 24
+vocab_size = 32000
+
+[quantization]
+level = "fp16"  # Optimal for Intel i9-14900HX with 64GB RAM
+
+[cpu]
+target = "intel-i9-14900hx"
+# Available targets: intel-n100, intel-i9-14900hx, raspberry-pi-4, raspberry-pi-5, generic-x86, generic-arm
+
+[memory]
+max_memory_mb = 57344  # 56GB for your 64GB system (leaving 8GB for OS)
+max_context_length = 4096  # 16384  # Extended context for powerful CPU

@@ -113,6 +113,8 @@ impl std::str::FromStr for QuantizationLevel {
 pub enum CpuTarget {
     /// Intel N100 processor (Alder Lake-N)
     IntelN100,
+    /// Intel i9-14900HX (Raptor Lake-HX, 24 cores, 32 threads, 36MB cache, AVX2)
+    IntelI9_14900HX,
     /// Raspberry Pi 4 (ARM Cortex-A72)
     RaspberryPi4,
     /// Raspberry Pi 5 (ARM Cortex-A76)
@@ -128,6 +130,13 @@ impl CpuTarget {
     pub fn detect() -> Self {
         #[cfg(target_arch = "x86_64")]
         {
+            // Try to detect Intel i9-14900HX via /proc/cpuinfo
+            if let Ok(cpu_info) = std::fs::read_to_string("/proc/cpuinfo") {
+                if cpu_info.contains("i9-14900HX") || cpu_info.contains("14900HX") {
+                    return CpuTarget::IntelI9_14900HX;
+                }
+            }
+            
             use std::arch::x86_64::*;
             
             // Check for Intel features
@@ -163,6 +172,7 @@ impl CpuTarget {
     pub fn optimal_quantization(&self) -> QuantizationLevel {
         match self {
             CpuTarget::IntelN100 => QuantizationLevel::Int8 { group_size: 64 },
+            CpuTarget::IntelI9_14900HX => QuantizationLevel::Fp16, // High-end CPU can handle FP16
             CpuTarget::RaspberryPi4 => QuantizationLevel::Int4 { group_size: 32 },
             CpuTarget::RaspberryPi5 => QuantizationLevel::Int8 { group_size: 64 },
             CpuTarget::GenericX86 => QuantizationLevel::Int8 { group_size: 128 },
@@ -174,6 +184,7 @@ impl CpuTarget {
     pub fn max_memory_mb(&self) -> usize {
         match self {
             CpuTarget::IntelN100 => 4096,
+            CpuTarget::IntelI9_14900HX => 32768, // 32GB for high-end desktop
             CpuTarget::RaspberryPi4 => 2048,
             CpuTarget::RaspberryPi5 => 4096,
             CpuTarget::GenericX86 => 8192,
@@ -186,6 +197,7 @@ impl std::fmt::Display for CpuTarget {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             CpuTarget::IntelN100 => write!(f, "intel-n100"),
+            CpuTarget::IntelI9_14900HX => write!(f, "intel-i9-14900hx"),
             CpuTarget::RaspberryPi4 => write!(f, "raspberry-pi-4"),
             CpuTarget::RaspberryPi5 => write!(f, "raspberry-pi-5"),
             CpuTarget::GenericX86 => write!(f, "generic-x86"),
@@ -200,6 +212,7 @@ impl std::str::FromStr for CpuTarget {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "intel-n100" => Ok(CpuTarget::IntelN100),
+            "intel-i9-14900hx" | "i9-14900hx" => Ok(CpuTarget::IntelI9_14900HX),
             "raspberry-pi-4" => Ok(CpuTarget::RaspberryPi4),
             "raspberry-pi-5" => Ok(CpuTarget::RaspberryPi5),
             "generic-x86" => Ok(CpuTarget::GenericX86),

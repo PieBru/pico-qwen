@@ -418,6 +418,8 @@ fn test_quantization_level_parsing() {
 fn test_cpu_target_parsing() {
     let targets = [
         ("intel-n100", CpuTarget::IntelN100),
+        ("intel-i9-14900hx", CpuTarget::IntelI9_14900HX),
+        ("i9-14900hx", CpuTarget::IntelI9_14900HX),
         ("raspberry-pi-4", CpuTarget::RaspberryPi4),
         ("raspberry-pi-5", CpuTarget::RaspberryPi5),
         ("generic-x86", CpuTarget::GenericX86),

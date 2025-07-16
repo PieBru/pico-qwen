@@ -50,11 +50,15 @@ mod tests {
 
     #[test]
     fn test_cpu_target_parsing() {
-        let intel: CpuTarget = "intel-n100".parse().unwrap();
+        let intel_n100: CpuTarget = "intel-n100".parse().unwrap();
+        let intel_i9: CpuTarget = "intel-i9-14900hx".parse().unwrap();
+        let i9_short: CpuTarget = "i9-14900hx".parse().unwrap();
         let pi4: CpuTarget = "raspberry-pi-4".parse().unwrap();
         let pi5: CpuTarget = "raspberry-pi-5".parse().unwrap();
 
-        assert_eq!(intel, CpuTarget::IntelN100);
+        assert_eq!(intel_n100, CpuTarget::IntelN100);
+        assert_eq!(intel_i9, CpuTarget::IntelI9_14900HX);
+        assert_eq!(i9_short, CpuTarget::IntelI9_14900HX);
         assert_eq!(pi4, CpuTarget::RaspberryPi4);
         assert_eq!(pi5, CpuTarget::RaspberryPi5);
     }
