@@ -19,11 +19,15 @@ cargo run --release -p qwen3-cli -- inference model.bin -t 0.7 -p 0.8 -s 42
 # Export models
 cargo run --release -p qwen3-cli -- export /path/to/huggingface/model /path/to/output.bin --group-size 64
 
+# List available models
+cargo run --release -p qwen3-cli -- models
+# With options:
+cargo run --release -p qwen3-cli -- models --directory ./HuggingFace --format json
+# Formats: table|json|list
+
 # Available options:
 # --group-size: Quantization group size (32, 64, 128, 256)
 # --quantization: Quantization level (int4, int8, fp16, fp32)
-
-# Inference options:
 # --temperature, -t: Sampling temperature (0.1-2.0)
 # --topp, -p: Top-p nucleus sampling (0.1-1.0)
 # --seed, -s: Random seed for reproducibility

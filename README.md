@@ -2,7 +2,7 @@
 
 **Ultra-lightweight Qwen3 inference for low-resource systems**
 
-> Started as an experimental fork of [qwen3-rs](https://github.com/reinterpretcat/qwen3-rs) designed for MiniPCs, SBCs, and low-power servers, [pico-qwen](https://github.com/PieBru/pico-qwen), then evolved as a independent project with more additional features.
+> Started as an experimental fork of [qwen3-rs](https://github.com/reinterpretcat/qwen3-rs) especially useful for MiniPCs, SBCs,low-power servers and all CPU-only light weight efficient LLM inferencing needs, [pico-qwen](https://github.com/PieBru/pico-qwen) then evolved as a independent project with more additional features.
 
 ## TL;DR
 

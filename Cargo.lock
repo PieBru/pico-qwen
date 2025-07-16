@@ -1683,6 +1683,8 @@ dependencies = [
  "log",
  "qwen3-export",
  "qwen3-inference",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

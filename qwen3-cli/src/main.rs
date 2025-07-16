@@ -103,6 +103,28 @@ fn inference_subcommand() -> Command {
         )
 }
 
+/// Define the models subcommand.
+fn models_subcommand() -> Command {
+    Command::new("models")
+        .about("List and manage available models")
+        .arg(
+            Arg::new("directory")
+                .short('d')
+                .long("directory")
+                .value_name("PATH")
+                .help("Directory to search for models")
+                .default_value("./HuggingFace"),
+        )
+        .arg(
+            Arg::new("format")
+                .short('f')
+                .long("format")
+                .value_name("FORMAT")
+                .help("Output format: table|json|list [default: table]")
+                .default_value("table"),
+        )
+}
+
 /// Run the export command with the provided arguments
 fn run_export_command(matches: &ArgMatches) -> Result<()> {
     let model_path = matches.get_one::<String>("MODEL_PATH").unwrap();
@@ -185,6 +207,106 @@ fn run_inference_command(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, serde::Serialize)]
+struct ModelInfo {
+    name: String,
+    path: String,
+    size: u64,
+    format: String,
+    modified: String,
+}
+
+/// Run the models command to list available models
+fn run_models_command(matches: &ArgMatches) -> Result<()> {
+    let directory = matches.get_one::<String>("directory").unwrap();
+    let format = matches.get_one::<String>("format").unwrap();
+    
+    let models = discover_models(directory)?;
+    
+    match format.as_str() {
+        "json" => {
+            println!("{}", serde_json::to_string_pretty(&models)?);
+        },
+        "list" => {
+            for model in models {
+                println!("{}", model.name);
+            }
+        },
+        "table" | _ => {
+            println!("┌─────────────────────────────────────────┬────────────────┬────────────┬────────┬─────────────────────┐");
+            println!("│ Model Name                              │ Size           │ Format     │ Path   │ Modified            │");
+            println!("├─────────────────────────────────────────┼────────────────┼────────────┼────────┼─────────────────────┤");
+            
+            for model in models {
+                let size_mb = model.size as f64 / (1024.0 * 1024.0);
+                println!("│ {:<39} │ {:<14} │ {:<10} │ {:<6} │ {:<19} │",
+                    model.name,
+                    format!("{:.1} MB", size_mb),
+                    model.format,
+                    if model.path.contains("HuggingFace") { "HF" } else { "custom" },
+                    model.modified
+                );
+            }
+            
+            println!("└─────────────────────────────────────────┴────────────────┴────────────┴────────┴─────────────────────┘");
+        }
+    }
+    
+    Ok(())
+}
+
+/// Discover available models in the specified directory
+fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
+    let mut models = Vec::new();
+    let path = Path::new(directory);
+    
+    if !path.exists() {
+        anyhow::bail!("Directory does not exist: {}", directory);
+    }
+    
+    // Scan for .bin files
+    if let Ok(entries) = std::fs::read_dir(path) {
+        for entry in entries.flatten() {
+            let file_path = entry.path();
+            if file_path.extension().and_then(|s| s.to_str()) == Some("bin") {
+                if let Ok(metadata) = entry.metadata() {
+                    let name = file_path.file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                        .to_string();
+                    
+                    let format = if name.contains("int4") {
+                        "INT4"
+                    } else if name.contains("int8") {
+                        "INT8"
+                    } else if name.contains("fp16") {
+                        "FP16"
+                    } else {
+                        "BINARY"
+                    }.to_string();
+                    
+                    let modified = metadata.modified()
+                        .map(|t| format!("{:?}", t))
+                        .unwrap_or_else(|_| "unknown".to_string());
+                    
+                    models.push(ModelInfo {
+                        name,
+                        path: file_path.to_string_lossy().to_string(),
+                        size: metadata.len(),
+                        format,
+                        modified,
+                    });
+                }
+            }
+        }
+    }
+    
+    // Sort by name for consistent output
+    models.sort_by(|a, b| a.name.cmp(&b.name));
+    
+    Ok(models)
+}
+
 fn execute_commands() -> Result<()> {
     // Initialize logger with clean format (no timestamp/module prefix) and use info level by default
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
@@ -198,11 +320,13 @@ fn execute_commands() -> Result<()> {
         .about("Qwen3 CLI: an educational tool for exporting and running Qwen3 models")
         .subcommand(export_subcommand())
         .subcommand(inference_subcommand())
+        .subcommand(models_subcommand())
         .get_matches();
 
     match matches.subcommand() {
         Some(("export", matches)) => run_export_command(matches),
         Some(("inference", matches)) => run_inference_command(matches),
+        Some(("models", matches)) => run_models_command(matches),
         _ => anyhow::bail!("No subcommand specified. Use -h to print help information."),
     }
 }

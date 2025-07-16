@@ -12,7 +12,7 @@ use tower_http::{
 use tracing::info;
 
 use crate::{config::Config, state::AppState};
-use crate::handlers::{chat, generate, models, health};
+use crate::handlers::{chat, generate, models, health, openai};
 
 pub struct Server {
     config: Config,
@@ -55,6 +55,7 @@ impl Server {
             .route("/api/v1/models/:model_id/unload", axum::routing::post(models::unload_model))
             .route("/api/v1/chat", axum::routing::post(chat::chat_handler))
             .route("/api/v1/generate", axum::routing::post(generate::generate_handler))
+            .route("/v1/models", axum::routing::get(openai::list_openai_models))
             .layer(cors)
             .layer(TraceLayer::new_for_http())
             .layer(RequestBodyLimitLayer::new(self.config.limits.max_request_size))
