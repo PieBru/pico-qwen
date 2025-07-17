@@ -29,7 +29,7 @@ cargo run --release -p qwen3-cli -- models --directory $HOME/HuggingFace --forma
 # Or use full path
 cargo run --release -p qwen3-cli -- models --directory /home/$USER/HuggingFace
 
-# Available options:
+# Available options: (FIXME: needs more testing)
 # --group-size: Quantization group size (32, 64, 128, 256)
 # --quantization: Quantization level (int4, int8, fp16, fp32)
 # --temperature, -t: Sampling temperature (0.1-2.0)
@@ -46,7 +46,7 @@ cargo run --release -p qwen3-cli -- models --directory /home/$USER/HuggingFace
 # Basic start
 cargo run --release -p qwen3-api
 
-# With custom config
+# With custom config (FIXME: needs more testing)
 cargo run --release -p qwen3-api -- --config ~/.config/pico-qwen/api.toml
 
 # List available models without starting server
@@ -58,13 +58,13 @@ cargo run --release -p qwen3-api -- --list-models
 
 #### Health Check
 ```bash
-curl -X GET http://localhost:58080/api/v1/health
+curl -X GET http://localhost:58081/api/v1/health
 ```
 
 #### Server Status
 ```bash
 # Get comprehensive server status including loaded models, memory usage, and statistics
-curl -X GET http://localhost:58080/api/v1/status
+curl -X GET http://localhost:58081/api/v1/status
 ```
 
 **Example Response:**
@@ -113,25 +113,25 @@ curl -X GET http://localhost:58080/api/v1/status
 #### Model Management
 ```bash
 # List available models
-curl -X GET http://localhost:8080/api/v1/models
+curl -X GET http://localhost:58081/api/v1/models
 
 # Load a model
-curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+curl -X POST http://localhost:58081/api/v1/models/Qwen3-0.6B-int8/load
 
 # Unload a model
-curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/unload
+curl -X POST http://localhost:58081/api/v1/models/Qwen3-0.6B-int8/unload
 
 # Get model info
-curl -X GET http://localhost:8080/api/v1/models/Qwen3-0.6B-int8
+curl -X GET http://localhost:58081/api/v1/models/Qwen3-0.6B-int8
 ```
 
 #### Chat Completion
 ```bash
 # First, load the model (required before first use)
-curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+curl -X POST http://localhost:58081/api/v1/models/Qwen3-0.6B-int8/load
 
 # Then use it for chat
-curl -X POST http://localhost:8080/api/v1/chat \
+curl -X POST http://localhost:58081/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{
     "model": "Qwen3-0.6B-int8",
@@ -147,9 +147,9 @@ curl -X POST http://localhost:8080/api/v1/chat \
 #### Text Generation
 ```bash
 # Load model first (if not already loaded)
-curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+curl -X POST http://localhost:58081/api/v1/models/Qwen3-0.6B-int8/load
 
-curl -X POST http://localhost:8080/api/v1/generate \
+curl -X POST http://localhost:58081/api/v1/generate \
   -H "Content-Type: application/json" \
   -d '{
     "model": "Qwen3-0.6B-int8",
@@ -162,9 +162,9 @@ curl -X POST http://localhost:8080/api/v1/generate \
 #### Streaming Responses
 ```bash
 # Load model first
-curl -X POST http://localhost:8080/api/v1/models/Qwen3-0.6B-int8/load
+curl -X POST http://localhost:58081/api/v1/models/Qwen3-0.6B-int8/load
 
-curl -X POST http://localhost:8080/api/v1/chat \
+curl -X POST http://localhost:58081/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{
     "model": "Qwen3-0.6B-int8",
@@ -190,15 +190,15 @@ curl -X POST http://localhost:8080/api/v1/chat \
 
 ### API Workflow
 1. **Start API server**: `cargo run --release -p qwen3-api`
-2. **List models**: `curl http://localhost:8080/api/v1/models`
-3. **Load model**: `curl -X POST http://localhost:8080/api/v1/models/YOUR_MODEL_NAME/load`
+2. **List models**: `curl http://localhost:58081/api/v1/models`
+3. **Load model**: `curl -X POST http://localhost:58081/api/v1/models/YOUR_MODEL_NAME/load`
 4. **Use model**: Send requests to `/v1/chat` or `/v1/generate`
 
 ## WebUI Usage
 
 ### Starting the WebUI
 ```bash
-# Basic start (connects to API on localhost:8080)
+# Basic start (connects to API on localhost:58081)
 cargo run --release -p qwen3-web
 
 # With custom API endpoint
@@ -236,7 +236,7 @@ cargo run --release -p qwen3-web -- --port 3000
 # ~/.config/pico-qwen/basic.toml
 [server]
 bind_address = "127.0.0.1"
-port = 8080
+port = 58081
 
 [models]
 directory = "~/HuggingFace"
@@ -249,7 +249,7 @@ max_loaded_models = 2
 # ~/.config/pico-qwen/low-memory.toml
 [server]
 bind_address = "127.0.0.1"
-port = 8080
+port = 58081
 
 [models]
 directory = "~/HuggingFace"
@@ -271,7 +271,7 @@ quantization = "int4-gs32"
 # ~/.config/pico-qwen/high-performance.toml
 [server]
 bind_address = "0.0.0.0"
-port = 8080
+port = 58081
 
 [models]
 directory = "~/HuggingFace"
@@ -362,7 +362,7 @@ cargo run --release -p qwen3-cli -- inference model.bin --context 1024
 ### Port Conflicts
 ```bash
 # Check port usage
-sudo lsof -i :8080
+sudo lsof -i :58081
 
 # Use different port
 cargo run --release -p qwen3-api -- --port 3000

@@ -42,20 +42,30 @@ pub struct LoggingConfig {
 impl Config {
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let config_str = std::fs::read_to_string(path)?;
-        let config: Config = toml::from_str(&config_str)?;
+        let mut config: Config = toml::from_str(&config_str)?;
+        
+        // Expand tilde in directory path
+        if config.models.directory.starts_with("~/") {
+            let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            config.models.directory = config.models.directory.replacen("~", &home_dir, 1);
+        }
+        
         Ok(config)
     }
 
     pub fn default() -> Self {
+        let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        let models_path = format!("{}/HuggingFace", home_dir);
+        
         Self {
             server: ServerConfig {
                 bind_address: "0.0.0.0".to_string(),
-                port: 8080,
+                port: 58081,
                 cors_origins: vec!["*".to_string()],
                 request_timeout: 30,
             },
             models: ModelsConfig {
-                directory: "./models".to_string(),
+                directory: models_path,
                 max_loaded_models: 2,
                 default_quantization: "int8".to_string(),
                 context_window: 4096,

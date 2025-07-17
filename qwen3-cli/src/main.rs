@@ -271,10 +271,22 @@ fn run_models_command(matches: &ArgMatches) -> Result<()> {
 /// Discover available models in the specified directory
 fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
     let mut models = Vec::new();
-    let path = Path::new(directory);
+    
+    // Expand tilde if present
+    let expanded_path = if directory.starts_with("~/") {
+        let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        directory.replacen("~", &home_dir, 1)
+    } else if directory.starts_with("$HOME") {
+        let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        directory.replacen("$HOME", &home_dir, 1)
+    } else {
+        directory.to_string()
+    };
+    
+    let path = Path::new(&expanded_path);
 
     if !path.exists() {
-        anyhow::bail!("Directory does not exist: {}", directory);
+        anyhow::bail!("Directory does not exist: {}", expanded_path);
     }
 
     // Scan for .bin files
@@ -302,7 +314,29 @@ fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
 
                     let modified = metadata
                         .modified()
-                        .map(|t| format!("{t:?}"))
+                        .map(|t| {
+                            // Convert to local time for display
+                            let duration = t.duration_since(std::time::UNIX_EPOCH).unwrap();
+                            let secs = duration.as_secs();
+                            
+                            // Simple date format: YYYY-MM-DD HH:MM
+                            // Since we can't easily get local time without chrono, use file age
+                            let now = std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs();
+                            let age_secs = now.saturating_sub(secs);
+                            
+                            if age_secs < 60 {
+                                "just now".to_string()
+                            } else if age_secs < 3600 {
+                                format!("{}m ago", age_secs / 60)
+                            } else if age_secs < 86400 {
+                                format!("{}h ago", age_secs / 3600)
+                            } else {
+                                format!("{}d ago", age_secs / 86400)
+                            }
+                        })
                         .unwrap_or_else(|_| "unknown".to_string());
 
                     models.push(ModelInfo {
