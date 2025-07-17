@@ -57,8 +57,8 @@ cargo build --release
 cargo build --release -p qwen3-cli
 cargo build --release -p qwen3-inference
 
-# Build with optimizations
-cargo build --release --features "cpu-optimization"
+# Build with optimizations (CPU optimizations are built-in)
+cargo build --release
 
 # Cross-compilation
 RUSTFLAGS="-C target-feature=+avx2" cargo build --release -p qwen3-cli
@@ -70,17 +70,23 @@ cargo build --release --target aarch64-unknown-linux-gnu
 # Run all tests
 cargo test --release --all
 
-# Run specific test
-cargo test --release -p qwen3-inference transformer::tests
+# Run specific package tests
+cargo test --release -p qwen3-inference
+
+# Run CPU optimization tests (available in qwen3-inference)
+cargo test --release -p qwen3-inference --test cpu_optimization_tests -- --nocapture
+
+# Run export package tests
+cargo test --release -p qwen3-export
+
+# Run API server tests
+cargo test --release -p qwen3-api
 
 # Run integration tests
 cargo test --release --test integration_tests
 
 # Run benchmarks
 cargo bench
-
-# Test with specific CPU target
-cargo test --release -- --nocapture --test cpu_optimization_tests
 ```
 
 ### Code Quality
@@ -159,7 +165,7 @@ impl CpuTarget {
 }
 ```
 
-### 2. New Quantization Level
+### 2. New Quantization Level (FIXME: need more testing)
 ```rust
 // Add to qwen3-inference/src/quantization.rs
 pub enum QuantizationLevel {
@@ -192,7 +198,7 @@ let app = Router::new()
     .route("/api/v1/new", post(new_endpoint));
 ```
 
-### 4. New MCP Tool
+### 4. New MCP Tool (FIXME: need more testing)
 ```rust
 // Add to qwen3-mcp/src/tools/
 use pocketflow::prelude::*;
@@ -265,14 +271,20 @@ cargo test --test integration_tests test_quantization_levels
 
 ### End-to-End Tests
 ```bash
-# Test full workflow
-./scripts/test_full_workflow.sh
+# Test full workflow - manual testing commands
+cargo run --release -p qwen3-export -- /path/to/model /tmp/test_model.bin --group-size 64
+cargo run --release -p qwen3-cli -- inference /tmp/test_model.bin -i "Hello world" --max-tokens 20
 
 # Test API endpoints
-./scripts/test_api_endpoints.sh
+cargo run --release -p qwen3-api &
+sleep 2
+curl -X POST http://localhost:58080/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"test"}]}'
 
 # Test WebUI
-./scripts/test_webui.sh
+cargo run --release -p qwen3-web &
+open http://localhost:58080
 ```
 
 ## Debugging
@@ -343,7 +355,7 @@ cargo build --release --target aarch64-unknown-linux-gnu
 6. **Submit pull request** with clear description
 
 ### Code Style
-- Follow Rust standard formatting (`cargo fmt`)
+- Follow Rust standard formatting (`cargo fmt --help`)
 - Use meaningful variable names
 - Add documentation comments
 - Write unit tests for new features
@@ -415,23 +427,43 @@ pub fn load(path: &str) -> Result<Model, ModelError> {
 ```
 
 ### Architecture Documentation
-- Update `./docs/architecture.md` for major changes
+- Update `./docs/architecture.md` for major changes (FIXME: TBD)
 - Add diagrams for complex components
 - Include performance benchmarks
 - Document breaking changes
 
 ## Performance Benchmarks
 
-### Standard Benchmarks
+### Current Benchmark Status
+The project currently doesn't have dedicated benchmark suites. Use these alternatives:
+
+### Performance Testing
 ```bash
-# CPU benchmarks
-cargo bench -p qwen3-inference cpu_benchmarks
+# Test inference performance with timing
+/usr/bin/time -v cargo run --release -p qwen3-cli -- inference model.bin -i "Hello world"
 
-# Memory benchmarks
-cargo bench -p qwen3-inference memory_benchmarks
+# Test CPU optimization impact
+cargo test --release -p qwen3-inference --test cpu_optimization_tests -- --nocapture
 
-# End-to-end benchmarks
-cargo bench -p qwen3-cli e2e_benchmarks
+# Memory usage profiling
+valgrind --tool=massif cargo run --release -p qwen3-cli -- inference model.bin -i "Test prompt"
+
+# Performance comparison between builds
+hyperfine --warmup 3 'cargo run --release -p qwen3-cli -- inference model.bin -i "Benchmark test" --max-tokens 50'
+```
+
+### Creating Benchmarks
+To add benchmarks, create `benches/` directories in crates and add benchmark files:
+
+```bash
+# Example: Add benchmark to qwen3-inference
+mkdir -p qwen3-inference/benches
+touch qwen3-inference/benches/cpu_benchmarks.rs
+
+# Then add to Cargo.toml:
+# [[bench]]
+# name = "cpu_benchmarks"
+# harness = false
 ```
 
 ### Custom Benchmarks

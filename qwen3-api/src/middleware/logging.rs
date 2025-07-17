@@ -4,8 +4,8 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use tracing::{info, warn};
 use std::time::Instant;
+use tracing::{info, warn};
 
 pub async fn logging_middleware(
     method: Method,
@@ -16,7 +16,7 @@ pub async fn logging_middleware(
 ) -> Response {
     let start = Instant::now();
     let request_id = generate_request_id();
-    
+
     info!(
         request_id = %request_id,
         method = %method,
@@ -24,12 +24,12 @@ pub async fn logging_middleware(
         user_agent = ?headers.get("user-agent"),
         "Incoming request"
     );
-    
+
     let response = next.run(request).await;
     let duration = start.elapsed();
-    
+
     let status = response.status();
-    
+
     if status.is_server_error() {
         warn!(
             request_id = %request_id,
@@ -45,7 +45,7 @@ pub async fn logging_middleware(
             "Request completed"
         );
     }
-    
+
     response
 }
 

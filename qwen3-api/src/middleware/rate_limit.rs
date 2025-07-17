@@ -4,10 +4,10 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::Mutex;
 
 #[derive(Clone)]
 pub struct RateLimitLayer {
@@ -17,7 +17,9 @@ pub struct RateLimitLayer {
 
 impl RateLimitLayer {
     pub fn new(requests_per_minute: u64) -> Self {
-        Self { requests_per_minute }
+        Self {
+            requests_per_minute,
+        }
     }
 }
 
@@ -36,24 +38,23 @@ impl RateLimitState {
         }
     }
 
-    async fn check_rate_limit(&self, client_ip: &str
-    ) -> Result<(), StatusCode> {
+    async fn check_rate_limit(&self, client_ip: &str) -> Result<(), StatusCode> {
         let mut requests = self.requests.lock().await;
         let now = Instant::now();
         let window = Duration::from_secs(60);
-        
+
         let client_requests = requests
             .entry(client_ip.to_string())
             .or_insert_with(Vec::new);
-        
+
         // Remove old requests
         client_requests.retain(|&time| now.duration_since(time) < window);
-        
+
         // Check if limit exceeded
         if client_requests.len() >= self.requests_per_minute as usize {
             return Err(StatusCode::TOO_MANY_REQUESTS);
         }
-        
+
         // Add current request
         client_requests.push(now);
         Ok(())
@@ -68,9 +69,9 @@ pub async fn rate_limit_middleware(
 ) -> Result<Response, StatusCode> {
     // Get client IP from headers or use a default
     let client_ip = extract_client_ip(&headers).unwrap_or("unknown".to_string());
-    
+
     state.check_rate_limit(&client_ip).await?;
-    
+
     Ok(next.run(request).await)
 }
 
@@ -81,13 +82,13 @@ fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
             return Some(ip.split(',').next()?.trim().to_string());
         }
     }
-    
+
     // Try X-Real-IP
     if let Some(real_ip) = headers.get("X-Real-IP") {
         if let Ok(ip) = real_ip.to_str() {
             return Some(ip.to_string());
         }
     }
-    
+
     None
 }

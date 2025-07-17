@@ -1,9 +1,6 @@
-use axum::{
-    extract::State,
-    Json,
-};
-use serde::{Deserialize, Serialize};
 use crate::state::AppState;
+use axum::{extract::State, Json};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HealthResponse {
@@ -27,23 +24,23 @@ pub struct ModelsInfo {
     pub loaded: Vec<String>,
 }
 
-pub async fn health_check(
-    State(state): State<AppState>,
-) -> Json<HealthResponse> {
-    let active_requests = state.active_requests.load(std::sync::atomic::Ordering::Relaxed);
+pub async fn health_check(State(state): State<AppState>) -> Json<HealthResponse> {
+    let active_requests = state
+        .active_requests
+        .load(std::sync::atomic::Ordering::Relaxed);
     let loaded_models = state.list_models();
-    
+
     let memory_usage = MemoryUsage {
         active_requests,
         loaded_models: loaded_models.len(),
         total_memory_mb: get_memory_usage(),
     };
-    
+
     let models = ModelsInfo {
         count: loaded_models.len(),
         loaded: loaded_models.into_iter().map(|m| m.id).collect(),
     };
-    
+
     Json(HealthResponse {
         status: "healthy".to_string(),
         timestamp: chrono::Utc::now().to_rfc3339(),
@@ -56,7 +53,7 @@ pub async fn health_check(
 #[cfg(target_os = "linux")]
 fn get_memory_usage() -> Option<u64> {
     use std::fs;
-    
+
     if let Ok(status) = fs::read_to_string("/proc/self/status") {
         for line in status.lines() {
             if line.starts_with("VmRSS:") {

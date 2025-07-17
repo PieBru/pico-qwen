@@ -1,7 +1,4 @@
-use axum::{
-    extract::State,
-    Json,
-};
+use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -40,19 +37,17 @@ pub struct OpenAIModelsResponse {
     pub data: Vec<OpenAIModel>,
 }
 
-pub async fn list_openai_models(
-    State(state): State<AppState>,
-) -> Json<OpenAIModelsResponse> {
+pub async fn list_openai_models(State(state): State<AppState>) -> Json<OpenAIModelsResponse> {
     let models_dir = Path::new(&state.config.models.directory);
     let mut models = Vec::new();
-    
+
     if let Ok(entries) = std::fs::read_dir(models_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("bin") {
                 if let Some(stem) = path.file_stem() {
                     let model_id = stem.to_string_lossy().to_string();
-                    
+
                     let model = OpenAIModel {
                         id: model_id.clone(),
                         object: "model".to_string(),
@@ -62,7 +57,7 @@ pub async fn list_openai_models(
                             .as_secs() as i64,
                         owned_by: "pico-qwen".to_string(),
                         permission: vec![OpenAIModelPermission {
-                            id: format!("perm_{}", model_id),
+                            id: format!("perm_{model_id}"),
                             object: "model_permission".to_string(),
                             created: std::time::SystemTime::now()
                                 .duration_since(std::time::UNIX_EPOCH)
@@ -86,10 +81,10 @@ pub async fn list_openai_models(
             }
         }
     }
-    
+
     // Sort by name for consistent output
     models.sort_by(|a, b| a.id.cmp(&b.id));
-    
+
     Json(OpenAIModelsResponse {
         object: "list".to_string(),
         data: models,

@@ -3,7 +3,7 @@ use std::io::Cursor;
 use crate::utils::MemoryMapper;
 use anyhow::{Context, Error, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Magic number for validating checkpoint files
 const CHECKPOINT_MAGIC: i32 = 0x616a6331;

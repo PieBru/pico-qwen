@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 
-use crate::extended_config::ExtendedModelConfig;
 use crate::cpu_optimizations::{CpuInfo, OptimizationStrategy};
+use crate::extended_config::ExtendedModelConfig;
 use crate::transformer::{Transformer, TransformerBuilder};
 
 /// Extended transformer with advanced configuration support
@@ -31,7 +31,7 @@ impl ExtendedTransformerBuilder {
     pub fn with_config(config: ExtendedModelConfig) -> Self {
         let cpu_info = CpuInfo::detect();
         let optimization_strategy = OptimizationStrategy::for_cpu(&cpu_info);
-        
+
         Self {
             config: Some(config),
             optimization_strategy: Some(optimization_strategy),
@@ -46,10 +46,7 @@ impl ExtendedTransformerBuilder {
     }
 
     /// Sets custom optimization strategy
-    pub fn optimization_strategy(
-        mut self,
-        strategy: OptimizationStrategy
-    ) -> Self {
+    pub fn optimization_strategy(mut self, strategy: OptimizationStrategy) -> Self {
         self.optimization_strategy = Some(strategy);
         self
     }
@@ -63,24 +60,25 @@ impl ExtendedTransformerBuilder {
     /// Builds the extended transformer
     pub fn build(self) -> Result<ExtendedTransformer> {
         let cpu_info = self.cpu_info.unwrap_or_else(CpuInfo::detect);
-        let optimization_strategy = self.optimization_strategy
+        let optimization_strategy = self
+            .optimization_strategy
             .unwrap_or_else(|| OptimizationStrategy::for_cpu(&cpu_info));
-        
-        let config = self.config
+
+        let config = self
+            .config
             .ok_or_else(|| anyhow::anyhow!("Extended configuration is required"))?;
-        
+
         // Validate configuration
-        config.validate()
+        config
+            .validate()
             .context("Invalid extended configuration")?;
-        
+
         // Build underlying transformer
-        let transformer = TransformerBuilder::new(
-            &config.model_paths.model_path.to_string_lossy()
-        )
-        .with_ctx_length(Some(config.memory_limits.max_context_length))
-        .build()
-        .context("Failed to build transformer")?;
-        
+        let transformer = TransformerBuilder::new(&config.model_paths.model_path.to_string_lossy())
+            .with_ctx_length(Some(config.memory_limits.max_context_length))
+            .build()
+            .context("Failed to build transformer")?;
+
         Ok(ExtendedTransformer {
             transformer,
             config,
@@ -91,11 +89,11 @@ impl ExtendedTransformerBuilder {
 
     /// Builds transformer from configuration file
     pub fn from_config_file(
-        config_path: impl Into<std::path::PathBuf>
+        config_path: impl Into<std::path::PathBuf>,
     ) -> Result<ExtendedTransformer> {
         let config = ExtendedModelConfig::from_file(config_path)
             .context("Failed to load configuration file")?;
-        
+
         Self::with_config(config).build()
     }
 }
@@ -104,24 +102,22 @@ impl ExtendedTransformer {
     /// Creates a new extended transformer with default settings
     pub fn new(model_path: impl Into<std::path::PathBuf>) -> Result<Self> {
         let model_path = model_path.into();
-        
+
         // First, we need to load the base config from the model
-        let transformer = TransformerBuilder::new(
-            &model_path.to_string_lossy()
-        )
-        .build()
-        .context("Failed to load model for configuration")?;
-        
+        let transformer = TransformerBuilder::new(&model_path.to_string_lossy())
+            .build()
+            .context("Failed to load model for configuration")?;
+
         let base_config = transformer.get_config();
         let config = ExtendedModelConfig::new(base_config.clone());
-        
+
         let cpu_info = CpuInfo::detect();
         let optimization_strategy = OptimizationStrategy::for_cpu(&cpu_info);
-        
+
         // Update config with actual model path
         let mut config = config;
         config.model_paths.model_path = model_path;
-        
+
         Ok(ExtendedTransformer {
             transformer,
             config,
@@ -133,28 +129,23 @@ impl ExtendedTransformer {
     /// Creates transformer optimized for specific CPU target
     pub fn for_cpu_target(
         model_path: impl Into<std::path::PathBuf>,
-        cpu_target: crate::quantization::CpuTarget
+        cpu_target: crate::quantization::CpuTarget,
     ) -> Result<Self> {
         let model_path = model_path.into();
-        
-        let transformer = TransformerBuilder::new(
-            &model_path.to_string_lossy()
-        )
-        .build()
-        .context("Failed to load model for configuration")?;
-        
+
+        let transformer = TransformerBuilder::new(&model_path.to_string_lossy())
+            .build()
+            .context("Failed to load model for configuration")?;
+
         let base_config = transformer.get_config();
-        let config = ExtendedModelConfig::for_cpu_target(
-            base_config.clone(),
-            cpu_target
-        );
-        
+        let config = ExtendedModelConfig::for_cpu_target(base_config.clone(), cpu_target);
+
         let cpu_info = CpuInfo::detect();
         let optimization_strategy = OptimizationStrategy::for_cpu(&cpu_info);
-        
+
         let mut config = config;
         config.model_paths.model_path = model_path;
-        
+
         Ok(ExtendedTransformer {
             transformer,
             config,
@@ -189,51 +180,46 @@ impl ExtendedTransformer {
     }
 
     /// Updates configuration and revalidates
-    pub fn update_config(&mut self,
-        updater: impl FnOnce(&mut ExtendedModelConfig
-    )) -> Result<()> {
+    pub fn update_config(&mut self, updater: impl FnOnce(&mut ExtendedModelConfig)) -> Result<()> {
         updater(&mut self.config);
-        self.config.validate()
+        self.config
+            .validate()
             .context("Invalid configuration update")?;
         Ok(())
     }
 
     /// Saves current configuration to file
-    pub fn save_config(
-        &self,
-        path: impl Into<std::path::PathBuf>
-    ) -> Result<()> {
-        self.config.save_to_file(path)
+    pub fn save_config(&self, path: impl Into<std::path::PathBuf>) -> Result<()> {
+        self.config
+            .save_to_file(path)
             .context("Failed to save configuration")
     }
 
     /// Gets memory usage statistics
     pub fn memory_stats(&self) -> MemoryStats {
-        let estimated_usage = self.config.estimate_memory_usage()
-            .unwrap_or(0);
-        
+        let estimated_usage = self.config.estimate_memory_usage().unwrap_or(0);
+
         MemoryStats {
             estimated_memory_mb: estimated_usage,
             max_allowed_mb: self.config.memory_limits.max_memory_mb,
-            utilization_ratio: estimated_usage as f32 / 
-                self.config.memory_limits.max_memory_mb as f32,
+            utilization_ratio: estimated_usage as f32
+                / self.config.memory_limits.max_memory_mb as f32,
             quantization_savings: self.calculate_quantization_savings(),
         }
     }
 
     /// Calculates memory savings from quantization
-    fn calculate_quantization_savings(&self
-    ) -> QuantizationSavings {
-        let original_size = self.config.base.dim * 
-            self.config.base.vocab_size * 4; // 4 bytes per float
-        
-        let quantized_size = self.config.quantization.memory_usage(
-            self.config.base.dim * self.config.base.vocab_size
-        );
-        
+    fn calculate_quantization_savings(&self) -> QuantizationSavings {
+        let original_size = self.config.base.dim * self.config.base.vocab_size * 4; // 4 bytes per float
+
+        let quantized_size = self
+            .config
+            .quantization
+            .memory_usage(self.config.base.dim * self.config.base.vocab_size);
+
         let saved_bytes = original_size.saturating_sub(quantized_size);
         let compression_ratio = quantized_size as f32 / original_size as f32;
-        
+
         QuantizationSavings {
             original_size_mb: original_size / (1024 * 1024),
             quantized_size_mb: quantized_size / (1024 * 1024),
@@ -291,10 +277,10 @@ mod tests {
         };
 
         let _config = ExtendedModelConfig::new(base_config);
-        
+
         let cpu_info = CpuInfo::detect();
         let _optimization_strategy = OptimizationStrategy::for_cpu(&cpu_info);
-        
+
         // Skip transformer creation for this test
         // Just test the basic functionality
         assert!(cpu_info.core_count > 0);
@@ -304,7 +290,7 @@ mod tests {
     fn test_config_save_load() {
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("test_config.toml");
-        
+
         let base_config = crate::configuration::ModelConfig {
             dim: 512,
             hidden_dim: 2048,
@@ -319,13 +305,13 @@ mod tests {
         };
 
         let config = ExtendedModelConfig::new(base_config);
-        
+
         // Save config
         config.save_to_file(&config_path).unwrap();
-        
+
         // Load config
         let loaded_config = ExtendedModelConfig::from_file(&config_path).unwrap();
-        
+
         assert_eq!(config.base.dim, loaded_config.base.dim);
         assert_eq!(config.quantization, loaded_config.quantization);
     }

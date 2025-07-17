@@ -57,8 +57,9 @@ impl AnthropicProvider {
 
     pub fn from_env() -> Option<Self> {
         let api_key = env::var("ANTHROPIC_API_KEY").ok()?;
-        let base_url = env::var("ANTHROPIC_BASE_URL").unwrap_or_else(|_| "https://api.anthropic.com/v1".to_string());
-        
+        let base_url = env::var("ANTHROPIC_BASE_URL")
+            .unwrap_or_else(|_| "https://api.anthropic.com/v1".to_string());
+
         let config = CloudProviderConfig {
             name: "anthropic".to_string(),
             api_key: Some(api_key),
@@ -75,9 +76,11 @@ impl AnthropicProvider {
 
 #[async_trait]
 impl CloudProvider for AnthropicProvider {
-    async fn generate(&self, prompt: &str, config: &InferenceConfig
-    ) -> Result<String> {
-        let api_key = self.config.api_key.as_ref()
+    async fn generate(&self, prompt: &str, config: &InferenceConfig) -> Result<String> {
+        let api_key = self
+            .config
+            .api_key
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Anthropic API key not configured"))?;
 
         let request = AnthropicRequest {
@@ -91,7 +94,8 @@ impl CloudProvider for AnthropicProvider {
             top_p: config.top_p,
         };
 
-        let response = self.client
+        let response = self
+            .client
             .post(format!("{}/messages", self.config.base_url))
             .header("x-api-key", api_key)
             .header("Content-Type", "application/json")
@@ -101,12 +105,16 @@ impl CloudProvider for AnthropicProvider {
             .await?;
 
         if !response.status().is_success() {
-            return Err(anyhow::anyhow!("Anthropic API error: {}", response.status()));
+            return Err(anyhow::anyhow!(
+                "Anthropic API error: {}",
+                response.status()
+            ));
         }
 
         let response_data: AnthropicResponse = response.json().await?;
-        
-        let content = response_data.content
+
+        let content = response_data
+            .content
             .iter()
             .find(|c| c.content_type == "text")
             .and_then(|c| c.text.clone())
@@ -115,13 +123,16 @@ impl CloudProvider for AnthropicProvider {
         Ok(content)
     }
 
-    async fn check_health(&self
-    ) -> HealthStatus {
+    async fn check_health(&self) -> HealthStatus {
         let start = std::time::Instant::now();
-        
-        let health_status = match self.client
+
+        match self
+            .client
             .get(format!("{}/models", self.config.base_url))
-            .header("x-api-key", self.config.api_key.as_ref().unwrap_or(&"dummy".to_string()))
+            .header(
+                "x-api-key",
+                self.config.api_key.as_ref().unwrap_or(&"dummy".to_string()),
+            )
             .send()
             .await
         {
@@ -137,30 +148,24 @@ impl CloudProvider for AnthropicProvider {
                 last_check: std::time::SystemTime::now(),
                 error_count: 1,
             },
-        };
-
-        health_status
+        }
     }
 
-    fn get_cost_estimate(&self, tokens: usize
-    ) -> f64 {
+    fn get_cost_estimate(&self, tokens: usize) -> f64 {
         // Approximate Anthropic pricing (per 1K tokens)
         let input_cost = 0.00025; // $0.00025 per 1K input tokens (Claude 3 Haiku)
         let output_cost = 0.00125; // $0.00125 per 1K output tokens (Claude 3 Haiku)
-        
+
         let estimated_output_tokens = (tokens as f64 * 0.7).min(tokens as f64);
-        
-        (tokens as f64 / 1000.0 * input_cost) + 
-        (estimated_output_tokens / 1000.0 * output_cost)
+
+        (tokens as f64 / 1000.0 * input_cost) + (estimated_output_tokens / 1000.0 * output_cost)
     }
 
-    fn get_latency_estimate(&self
-    ) -> Duration {
+    fn get_latency_estimate(&self) -> Duration {
         Duration::from_millis(800) // Typical Anthropic latency
     }
 
-    fn get_name(&self
-    ) -> &str {
+    fn get_name(&self) -> &str {
         &self.config.name
     }
 }
@@ -168,7 +173,7 @@ impl CloudProvider for AnthropicProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_anthropic_provider_creation() {
         let config = CloudProviderConfig {
@@ -180,11 +185,11 @@ mod tests {
             temperature: 0.7,
             timeout: Duration::from_secs(30),
         };
-        
+
         let provider = AnthropicProvider::new(config);
         assert_eq!(provider.get_name(), "anthropic");
     }
-    
+
     #[tokio::test]
     async fn test_cost_estimation() {
         let config = CloudProviderConfig {
@@ -196,7 +201,7 @@ mod tests {
             temperature: 0.7,
             timeout: Duration::from_secs(30),
         };
-        
+
         let provider = AnthropicProvider::new(config);
         let cost = provider.get_cost_estimate(1000);
         assert!(cost > 0.0);

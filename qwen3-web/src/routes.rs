@@ -1,12 +1,5 @@
-use axum::{
-    routing::get,
-    Router,
-};
-use tower_http::{
-    cors::CorsLayer,
-    services::ServeDir,
-    trace::TraceLayer,
-};
+use axum::{routing::get, Router};
+use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
 
 use crate::config::Config;
 use crate::websocket;

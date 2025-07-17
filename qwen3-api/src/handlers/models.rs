@@ -1,9 +1,9 @@
+use crate::state::{AppState, ModelInfo};
 use axum::{
     extract::{Path, State},
     Json,
 };
 use serde::{Deserialize, Serialize};
-use crate::state::{AppState, ModelInfo};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoadModelRequest {
@@ -30,12 +30,10 @@ pub struct ModelsListResponse {
     pub total: usize,
 }
 
-pub async fn list_models(
-    State(state): State<AppState>,
-) -> Json<ModelsListResponse> {
+pub async fn list_models(State(state): State<AppState>) -> Json<ModelsListResponse> {
     let models = state.list_models();
     let total = models.len();
-    
+
     Json(ModelsListResponse { models, total })
 }
 
@@ -49,15 +47,15 @@ pub async fn load_model(
         return Json(LoadModelResponse {
             success: false,
             model_id: model_id.clone(),
-            message: format!("Failed to enforce model limits: {}", e),
+            message: format!("Failed to enforce model limits: {e}"),
         });
     }
-    
+
     // Load the model
-    match state.load_model(
-        &model_id,
-        request.quantization.as_deref(),
-    ).await {
+    match state
+        .load_model(&model_id, request.quantization.as_deref())
+        .await
+    {
         Ok(model_id) => Json(LoadModelResponse {
             success: true,
             model_id,
@@ -66,7 +64,7 @@ pub async fn load_model(
         Err(e) => Json(LoadModelResponse {
             success: false,
             model_id,
-            message: format!("Failed to load model: {}", e),
+            message: format!("Failed to load model: {e}"),
         }),
     }
 }
@@ -78,11 +76,11 @@ pub async fn unload_model(
     match state.unload_model(&model_id) {
         Ok(_) => Json(UnloadModelResponse {
             success: true,
-            message: format!("Model {} unloaded successfully", model_id),
+            message: format!("Model {model_id} unloaded successfully"),
         }),
         Err(e) => Json(UnloadModelResponse {
             success: false,
-            message: format!("Failed to unload model: {}", e),
+            message: format!("Failed to unload model: {e}"),
         }),
     }
 }

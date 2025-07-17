@@ -14,18 +14,22 @@ async fn test_health_check() {
     let app = server.create_router();
 
     let response = app
-        .oneshot(Request::builder()
-            .uri("/api/v1/health")
-            .body(Body::empty())
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let health: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    
+
     assert_eq!(health["status"], "healthy");
 }
 
@@ -36,18 +40,22 @@ async fn test_models_list() {
     let app = server.create_router();
 
     let response = app
-        .oneshot(Request::builder()
-            .uri("/api/v1/models")
-            .body(Body::empty())
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/models")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let models: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    
+
     assert!(models["models"].is_array());
 }
 
@@ -65,12 +73,14 @@ async fn test_generate_endpoint() {
     });
 
     let response = app
-        .oneshot(Request::builder()
-            .method("POST")
-            .uri("/api/v1/generate")
-            .header("content-type", "application/json")
-            .body(Body::from(request_body.to_string()))
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/generate")
+                .header("content-type", "application/json")
+                .body(Body::from(request_body.to_string()))
+                .unwrap(),
+        )
         .await
         .unwrap();
 
@@ -96,12 +106,14 @@ async fn test_chat_endpoint() {
     });
 
     let response = app
-        .oneshot(Request::builder()
-            .method("POST")
-            .uri("/api/v1/chat")
-            .header("content-type", "application/json")
-            .body(Body::from(request_body.to_string()))
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/chat")
+                .header("content-type", "application/json")
+                .body(Body::from(request_body.to_string()))
+                .unwrap(),
+        )
         .await
         .unwrap();
 
@@ -116,20 +128,22 @@ async fn test_cors_headers() {
     let app = server.create_router();
 
     let response = app
-        .oneshot(Request::builder()
-            .method("OPTIONS")
-            .uri("/api/v1/health")
-            .header("origin", "http://localhost:3000")
-            .header("access-control-request-method", "GET")
-            .body(Body::empty())
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .method("OPTIONS")
+                .uri("/api/v1/health")
+                .header("origin", "http://localhost:3000")
+                .header("access-control-request-method", "GET")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
-    assert!(response.headers().contains_key("access-control-allow-origin"));
-    assert_eq!(
-        response.headers()["access-control-allow-origin"], "*"
-    );
+    assert!(response
+        .headers()
+        .contains_key("access-control-allow-origin"));
+    assert_eq!(response.headers()["access-control-allow-origin"], "*");
 }
 
 #[tokio::test]
@@ -139,12 +153,14 @@ async fn test_invalid_json_returns_422() {
     let app = server.create_router();
 
     let response = app
-        .oneshot(Request::builder()
-            .method("POST")
-            .uri("/api/v1/chat")
-            .header("content-type", "application/json")
-            .body(Body::from("{invalid json}"))
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/chat")
+                .header("content-type", "application/json")
+                .body(Body::from("{invalid json}"))
+                .unwrap(),
+        )
         .await
         .unwrap();
 

@@ -49,7 +49,7 @@ pub enum CpuFeature {
     Bmi1,
     Bmi2,
     Popcnt,
-    
+
     // ARM features
     Neon,
     Fp16,
@@ -96,12 +96,12 @@ impl CpuInfo {
         {
             detect_x86_64()
         }
-        
+
         #[cfg(target_arch = "aarch64")]
         {
             detect_aarch64()
         }
-        
+
         #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
         {
             Self::generic_fallback()
@@ -132,25 +132,21 @@ impl CpuInfo {
     /// Determines optimal quantization based on CPU capabilities
     pub fn optimal_quantization(&self) -> crate::quantization::QuantizationLevel {
         use crate::quantization::QuantizationLevel;
-        
+
         let total_memory_mb = self.estimate_total_memory_mb();
-        
+
         match (self.vendor, total_memory_mb) {
             (CpuVendor::Intel, mem) if mem >= 8192 && self.has_feature(CpuFeature::Avx2) => {
                 QuantizationLevel::Int8 { group_size: 64 }
             }
-            (CpuVendor::Intel, mem) if mem >= 4096 => {
-                QuantizationLevel::Int8 { group_size: 128 }
-            }
+            (CpuVendor::Intel, mem) if mem >= 4096 => QuantizationLevel::Int8 { group_size: 128 },
             (CpuVendor::Amd, mem) if mem >= 8192 && self.has_feature(CpuFeature::Avx2) => {
                 QuantizationLevel::Int8 { group_size: 64 }
             }
             (CpuVendor::Arm, _) if self.has_feature(CpuFeature::Neon) => {
                 QuantizationLevel::Int8 { group_size: 64 }
             }
-            _ => {
-                QuantizationLevel::Int4 { group_size: 64 }
-            }
+            _ => QuantizationLevel::Int4 { group_size: 64 },
         }
     }
 
@@ -171,7 +167,7 @@ impl CpuInfo {
                 }
             }
         }
-        
+
         // Fallback based on CPU type
         match self.vendor {
             CpuVendor::Intel => 8192, // Assume 8GB for Intel
@@ -187,30 +183,30 @@ impl CpuInfo {
         {
             unsafe {
                 let mut cache_info = CacheInfo::default();
-                
+
                 // Get cache topology using CPUID
                 if self.has_feature(CpuFeature::Avx) {
                     // Try to get cache info from CPUID leaf 0x80000006
                     let leaf = 0x80000006;
                     let ecx = __cpuid(leaf).ecx;
-                    
+
                     // L2 cache size in KB (bits 16-31)
                     let l2_cache_kb = ((ecx >> 16) & 0xFFFF) as usize;
                     if l2_cache_kb > 0 {
                         cache_info.l2_cache_kb = l2_cache_kb;
                     }
-                    
+
                     // L3 cache size in KB (bits 0-15)
                     let l3_cache_kb = (ecx & 0xFFFF) as usize;
                     if l3_cache_kb > 0 {
                         cache_info.l3_cache_kb = l3_cache_kb;
                     }
                 }
-                
+
                 cache_info
             }
         }
-        
+
         #[cfg(not(target_arch = "x86_64"))]
         {
             CacheInfo::default()
@@ -224,13 +220,13 @@ impl OptimizationStrategy {
         let simd_width = determine_simd_width(cpu_info);
         let use_fma = cpu_info.has_feature(CpuFeature::Fma);
         let use_avx512 = cpu_info.has_feature(CpuFeature::Avx512F);
-        
+
         let cache_info = cpu_info.get_cache_info();
         let cache_blocking = CacheBlockingStrategy::from_cache_info(&cache_info, simd_width);
-        
+
         let parallel_strategy = if cpu_info.core_count >= 4 {
-            ParallelStrategy::RayonThreads { 
-                max_threads: (cpu_info.core_count / 2).max(1) 
+            ParallelStrategy::RayonThreads {
+                max_threads: (cpu_info.core_count / 2).max(1),
             }
         } else {
             ParallelStrategy::SingleThreaded
@@ -255,10 +251,10 @@ impl OptimizationStrategy {
     /// Returns the optimal tile size for GEMM operations
     pub fn gemm_tile_size(&self) -> (usize, usize, usize) {
         match self.simd_width {
-            16 => (8, 8, 4),  // AVX-512
-            8 => (4, 4, 4),   // AVX2
-            4 => (4, 4, 2),   // SSE
-            _ => (2, 2, 2),   // Generic
+            16 => (8, 8, 4), // AVX-512
+            8 => (4, 4, 4),  // AVX2
+            4 => (4, 4, 2),  // SSE
+            _ => (2, 2, 2),  // Generic
         }
     }
 }
@@ -293,39 +289,69 @@ pub struct CacheInfo {
 fn detect_x86_64() -> CpuInfo {
     let mut features = Vec::new();
     let vendor;
-    
+
     #[cfg(target_arch = "x86_64")]
     {
         use std::arch::x86_64::*;
-        
+
         unsafe {
             // Get feature flags
             let feature_leaf = __cpuid(1);
             let ecx = feature_leaf.ecx;
             let edx = feature_leaf.edx;
-            
-            if edx & (1 << 25) != 0 { features.push(CpuFeature::Sse); }
-            if edx & (1 << 26) != 0 { features.push(CpuFeature::Sse2); }
-            if ecx & (1 << 0) != 0 { features.push(CpuFeature::Sse3); }
-            if ecx & (1 << 19) != 0 { features.push(CpuFeature::Sse41); }
-            if ecx & (1 << 20) != 0 { features.push(CpuFeature::Sse42); }
-            
+
+            if edx & (1 << 25) != 0 {
+                features.push(CpuFeature::Sse);
+            }
+            if edx & (1 << 26) != 0 {
+                features.push(CpuFeature::Sse2);
+            }
+            if ecx & (1 << 0) != 0 {
+                features.push(CpuFeature::Sse3);
+            }
+            if ecx & (1 << 19) != 0 {
+                features.push(CpuFeature::Sse41);
+            }
+            if ecx & (1 << 20) != 0 {
+                features.push(CpuFeature::Sse42);
+            }
+
             let extended_features = __cpuid(7);
             let ebx = extended_features.ebx;
-            
-            if ebx & (1 << 3) != 0 { features.push(CpuFeature::Bmi1); }
-            if ebx & (1 << 8) != 0 { features.push(CpuFeature::Bmi2); }
-            if ebx & (1 << 5) != 0 { features.push(CpuFeature::Avx2); }
-            if ebx & (1 << 16) != 0 { features.push(CpuFeature::Avx512F); }
-            if ebx & (1 << 17) != 0 { features.push(CpuFeature::Avx512DQ); }
-            if ebx & (1 << 30) != 0 { features.push(CpuFeature::Avx512BW); }
-            if ebx & (1 << 31) != 0 { features.push(CpuFeature::Avx512VL); }
-            if ebx & (1 << 21) != 0 { features.push(CpuFeature::Avx); }
-            if ebx & (1 << 12) != 0 { features.push(CpuFeature::Fma); }
-            if ebx & (1 << 23) != 0 { features.push(CpuFeature::Popcnt); }
+
+            if ebx & (1 << 3) != 0 {
+                features.push(CpuFeature::Bmi1);
+            }
+            if ebx & (1 << 8) != 0 {
+                features.push(CpuFeature::Bmi2);
+            }
+            if ebx & (1 << 5) != 0 {
+                features.push(CpuFeature::Avx2);
+            }
+            if ebx & (1 << 16) != 0 {
+                features.push(CpuFeature::Avx512F);
+            }
+            if ebx & (1 << 17) != 0 {
+                features.push(CpuFeature::Avx512DQ);
+            }
+            if ebx & (1 << 30) != 0 {
+                features.push(CpuFeature::Avx512BW);
+            }
+            if ebx & (1 << 31) != 0 {
+                features.push(CpuFeature::Avx512VL);
+            }
+            if ebx & (1 << 21) != 0 {
+                features.push(CpuFeature::Avx);
+            }
+            if ebx & (1 << 12) != 0 {
+                features.push(CpuFeature::Fma);
+            }
+            if ebx & (1 << 23) != 0 {
+                features.push(CpuFeature::Popcnt);
+            }
         }
     }
-    
+
     // For now, detect Intel vs AMD based on feature availability
     #[cfg(target_arch = "x86_64")]
     {
@@ -337,7 +363,7 @@ fn detect_x86_64() -> CpuInfo {
             vendor = CpuVendor::Unknown;
         }
     }
-    
+
     CpuInfo {
         vendor,
         features,
@@ -356,7 +382,7 @@ fn detect_x86_64() -> CpuInfo {
 fn detect_aarch64() -> CpuInfo {
     let mut features = Vec::new();
     let mut vendor = CpuVendor::Arm;
-    
+
     // Read /proc/cpuinfo for ARM features
     if let Ok(cpuinfo) = fs::read_to_string("/proc/cpuinfo") {
         if cpuinfo.contains("neon") {
@@ -375,7 +401,7 @@ fn detect_aarch64() -> CpuInfo {
             features.push(CpuFeature::Sha2);
         }
     }
-    
+
     CpuInfo {
         vendor,
         features,
@@ -394,13 +420,13 @@ fn determine_simd_width(cpu_info: &CpuInfo) -> usize {
     if cpu_info.has_feature(CpuFeature::Avx512F) {
         16 // AVX-512: 16 floats per vector
     } else if cpu_info.has_feature(CpuFeature::Avx2) {
-        8  // AVX2: 8 floats per vector
+        8 // AVX2: 8 floats per vector
     } else if cpu_info.has_feature(CpuFeature::Avx) {
-        8  // AVX: 8 floats per vector
+        8 // AVX: 8 floats per vector
     } else if cpu_info.has_feature(CpuFeature::Sse) {
-        4  // SSE: 4 floats per vector
+        4 // SSE: 4 floats per vector
     } else {
-        1  // Scalar fallback
+        1 // Scalar fallback
     }
 }
 
@@ -413,7 +439,7 @@ mod tests {
         let cpu_info = CpuInfo::detect();
         assert!(cpu_info.core_count > 0);
         assert!(cpu_info.thread_count > 0);
-        println!("Detected CPU: {:?}", cpu_info);
+        println!("Detected CPU: {cpu_info:?}");
     }
 
     #[test]
@@ -421,13 +447,13 @@ mod tests {
         let cpu_info = CpuInfo::detect();
         let strategy = OptimizationStrategy::for_cpu(&cpu_info);
         assert!(strategy.simd_width > 0);
-        println!("Optimization strategy: {:?}", strategy);
+        println!("Optimization strategy: {strategy:?}");
     }
 
     #[test]
     fn test_quantization_selection() {
         let cpu_info = CpuInfo::detect();
         let quantization = cpu_info.optimal_quantization();
-        println!("Optimal quantization: {}", quantization);
+        println!("Optimal quantization: {quantization}");
     }
 }

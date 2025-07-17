@@ -3,7 +3,7 @@
 //! Provides multiple quantization levels with configurable group sizes
 //! and dynamic quantization capabilities.
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Supported quantization levels for memory optimization
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,7 +40,7 @@ impl QuantizationLevel {
 
     /// Estimates memory usage for given tensor size
     pub fn memory_usage(&self, elements: usize) -> usize {
-        let bytes = match self {
+        match self {
             QuantizationLevel::Int4 { group_size } => {
                 // 4 bits per element + scale factors (f32 per group)
                 (elements * 4) / 8 + (elements / group_size) * 4
@@ -51,8 +51,7 @@ impl QuantizationLevel {
             }
             QuantizationLevel::Fp16 => elements * 2,
             QuantizationLevel::Fp32 => elements * 4,
-        };
-        bytes
+        }
     }
 
     /// Checks if this quantization level supports dynamic adjustment
@@ -67,8 +66,8 @@ impl QuantizationLevel {
 impl std::fmt::Display for QuantizationLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            QuantizationLevel::Int4 { group_size } => write!(f, "int4-gs{}", group_size),
-            QuantizationLevel::Int8 { group_size } => write!(f, "int8-gs{}", group_size),
+            QuantizationLevel::Int4 { group_size } => write!(f, "int4-gs{group_size}"),
+            QuantizationLevel::Int8 { group_size } => write!(f, "int8-gs{group_size}"),
             QuantizationLevel::Fp16 => write!(f, "fp16"),
             QuantizationLevel::Fp32 => write!(f, "fp32"),
         }
@@ -80,30 +79,30 @@ impl std::str::FromStr for QuantizationLevel {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.to_lowercase();
-        
+
         if s == "fp32" {
             return Ok(QuantizationLevel::Fp32);
         }
-        
+
         if s == "fp16" {
             return Ok(QuantizationLevel::Fp16);
         }
-        
+
         if let Some(group_size_str) = s.strip_prefix("int8-gs") {
             let group_size = group_size_str
                 .parse()
-                .map_err(|_| format!("Invalid group size: {}", group_size_str))?;
+                .map_err(|_| format!("Invalid group size: {group_size_str}"))?;
             return Ok(QuantizationLevel::Int8 { group_size });
         }
-        
+
         if let Some(group_size_str) = s.strip_prefix("int4-gs") {
             let group_size = group_size_str
                 .parse()
-                .map_err(|_| format!("Invalid group size: {}", group_size_str))?;
+                .map_err(|_| format!("Invalid group size: {group_size_str}"))?;
             return Ok(QuantizationLevel::Int4 { group_size });
         }
-        
-        Err(format!("Invalid quantization level: {}", s))
+
+        Err(format!("Invalid quantization level: {s}"))
     }
 }
 
@@ -135,17 +134,15 @@ impl CpuTarget {
                     return CpuTarget::IntelI9_14900HX;
                 }
             }
-            
-            
-            
+
             // Check for Intel features
             if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("avx512f") {
                 return CpuTarget::IntelN100;
             }
-            
+
             CpuTarget::GenericX86
         }
-        
+
         #[cfg(target_arch = "aarch64")]
         {
             // Raspberry Pi detection based on /proc/cpuinfo
@@ -157,10 +154,10 @@ impl CpuTarget {
                     return CpuTarget::RaspberryPi5;
                 }
             }
-            
+
             CpuTarget::GenericArm
         }
-        
+
         #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
         {
             CpuTarget::GenericX86
@@ -216,7 +213,7 @@ impl std::str::FromStr for CpuTarget {
             "raspberry-pi-5" => Ok(CpuTarget::RaspberryPi5),
             "generic-x86" => Ok(CpuTarget::GenericX86),
             "generic-arm" => Ok(CpuTarget::GenericArm),
-            _ => Err(format!("Invalid CPU target: {}", s)),
+            _ => Err(format!("Invalid CPU target: {s}")),
         }
     }
 }

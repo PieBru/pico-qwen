@@ -271,7 +271,7 @@ fn run_models_command(matches: &ArgMatches) -> Result<()> {
 /// Discover available models in the specified directory
 fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
     let mut models = Vec::new();
-    
+
     // Expand tilde if present
     let expanded_path = if directory.starts_with("~/") {
         let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
@@ -282,7 +282,7 @@ fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
     } else {
         directory.to_string()
     };
-    
+
     let path = Path::new(&expanded_path);
 
     if !path.exists() {
@@ -318,7 +318,7 @@ fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
                             // Convert to local time for display
                             let duration = t.duration_since(std::time::UNIX_EPOCH).unwrap();
                             let secs = duration.as_secs();
-                            
+
                             // Simple date format: YYYY-MM-DD HH:MM
                             // Since we can't easily get local time without chrono, use file age
                             let now = std::time::SystemTime::now()
@@ -326,7 +326,7 @@ fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
                                 .unwrap()
                                 .as_secs();
                             let age_secs = now.saturating_sub(secs);
-                            
+
                             if age_secs < 60 {
                                 "just now".to_string()
                             } else if age_secs < 3600 {

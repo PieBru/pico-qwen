@@ -25,11 +25,13 @@ mod tests {
     #[test]
     fn test_cpu_target_detection() {
         let cpu_target = CpuTarget::detect();
-        
+
         // Should detect some CPU target
-        assert!(!matches!(cpu_target, CpuTarget::GenericX86) || 
-                !matches!(cpu_target, CpuTarget::GenericArm));
-        
+        assert!(
+            !matches!(cpu_target, CpuTarget::GenericX86)
+                || !matches!(cpu_target, CpuTarget::GenericArm)
+        );
+
         // Test memory limits for different targets
         let limits = MemoryLimits::for_cpu_target(cpu_target);
         assert!(limits.max_memory_mb > 0);
@@ -67,11 +69,11 @@ mod tests {
     fn test_memory_limits_calculation() {
         let cpu_info = CpuInfo::detect();
         let strategy = OptimizationStrategy::for_cpu(&cpu_info);
-        
+
         // Test strategy properties
         assert!(strategy.simd_width > 0);
         assert!(strategy.alignment > 0);
-        
+
         // Test tile size calculation
         let (m, n, k) = strategy.gemm_tile_size();
         assert!(m > 0 && m <= 16);
@@ -82,23 +84,23 @@ mod tests {
     #[test]
     fn test_cpu_info_detection() {
         let cpu_info = CpuInfo::detect();
-        
+
         // Basic assertions
         assert!(cpu_info.core_count > 0);
         assert!(cpu_info.thread_count >= cpu_info.core_count);
         assert!(cpu_info.cache_size > 0);
-        
-        println!("Detected CPU: {} cores, {} threads", 
-                 cpu_info.core_count, cpu_info.thread_count);
+
+        println!(
+            "Detected CPU: {} cores, {} threads",
+            cpu_info.core_count, cpu_info.thread_count
+        );
     }
 
     #[test]
     fn test_cloud_config_creation() {
-        let openai_config = CloudConfig::openai(
-            "test-key".to_string(),
-            "gpt-3.5-turbo".to_string()
-        );
-        
+        let openai_config =
+            CloudConfig::openai("test-key".to_string(), "gpt-3.5-turbo".to_string());
+
         assert_eq!(openai_config.provider, "openai");
         assert_eq!(openai_config.model_name, "gpt-3.5-turbo");
         assert_eq!(openai_config.api_key, "test-key");

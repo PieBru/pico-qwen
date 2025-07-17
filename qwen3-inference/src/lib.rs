@@ -2,10 +2,10 @@
 //!
 //! This crate will provide inference functionality for Qwen3 models in the future.
 
-pub mod configuration;
-mod cpu_optimizations;
-pub mod cpu;
 pub mod cloud;
+pub mod configuration;
+pub mod cpu;
+mod cpu_optimizations;
 mod extended_config;
 pub mod extended_transformer;
 pub mod generation;
@@ -26,10 +26,17 @@ use crate::tokenizer::Tokenizer;
 use crate::transformer::TransformerBuilder;
 
 pub use crate::configuration::ModelConfig;
-pub use crate::cpu_optimizations::{CpuInfo, CpuVendor, CpuFeature, OptimizationStrategy, CacheBlockingStrategy, ParallelStrategy};
-pub use crate::extended_config::{ExtendedModelConfig, ModelPaths, InferenceParameters, ContextManagement, AdvancedConfig, LogLevel};
-pub use crate::extended_transformer::{ExtendedTransformer, ExtendedTransformerBuilder, MemoryStats, QuantizationSavings};
-pub use crate::quantization::{QuantizationLevel, CpuTarget, MemoryLimits, CloudConfig};
+pub use crate::cpu_optimizations::{
+    CacheBlockingStrategy, CpuFeature, CpuInfo, CpuVendor, OptimizationStrategy, ParallelStrategy,
+};
+pub use crate::extended_config::{
+    AdvancedConfig, ContextManagement, ExtendedModelConfig, InferenceParameters, LogLevel,
+    ModelPaths,
+};
+pub use crate::extended_transformer::{
+    ExtendedTransformer, ExtendedTransformerBuilder, MemoryStats, QuantizationSavings,
+};
+pub use crate::quantization::{CloudConfig, CpuTarget, MemoryLimits, QuantizationLevel};
 
 #[derive(Debug, Clone)]
 pub struct InferenceConfig {

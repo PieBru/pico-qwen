@@ -21,18 +21,22 @@ async fn test_health_check() {
     let app = qwen3_web::routes::create_app(config);
 
     let response = app
-        .oneshot(Request::builder()
-            .uri("/health")
-            .body(Body::empty())
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let health: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    
+
     assert_eq!(health["status"], "healthy");
     assert_eq!(health["service"], "qwen3-web");
 }
@@ -53,10 +57,12 @@ async fn test_static_files() {
 
     // Test health endpoint (static files may not exist in test environment)
     let response = app
-        .oneshot(Request::builder()
-            .uri("/health")
-            .body(Body::empty())
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
@@ -78,15 +84,19 @@ async fn test_cors_headers() {
     let app = qwen3_web::routes::create_app(config);
 
     let response = app
-        .oneshot(Request::builder()
-            .method("OPTIONS")
-            .uri("/health")
-            .header("origin", "http://localhost:3000")
-            .header("access-control-request-method", "GET")
-            .body(Body::empty())
-            .unwrap())
+        .oneshot(
+            Request::builder()
+                .method("OPTIONS")
+                .uri("/health")
+                .header("origin", "http://localhost:3000")
+                .header("access-control-request-method", "GET")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 
-    assert!(response.headers().contains_key("access-control-allow-origin"));
+    assert!(response
+        .headers()
+        .contains_key("access-control-allow-origin"));
 }

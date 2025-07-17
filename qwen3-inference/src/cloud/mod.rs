@@ -1,14 +1,14 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::RwLock;
 
-use crate::cloud::openai::OpenAiProvider;
 use crate::cloud::anthropic::AnthropicProvider;
 use crate::cloud::local::LocalProvider;
+use crate::cloud::openai::OpenAiProvider;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CloudConfig {
@@ -67,7 +67,7 @@ pub struct CloudManager {
 impl CloudManager {
     pub fn new(config: CloudConfig) -> Result<Self> {
         let mut providers = HashMap::new();
-        
+
         // Add providers from configuration
         for provider_config in config.providers {
             let provider: Arc<dyn CloudProvider> = match provider_config.name.as_str() {
@@ -78,7 +78,7 @@ impl CloudManager {
             };
             providers.insert(provider_config.name.clone(), provider);
         }
-        
+
         Ok(CloudManager {
             providers,
             health_cache: Arc::new(RwLock::new(HashMap::new())),
@@ -86,7 +86,7 @@ impl CloudManager {
             health_check_interval: Duration::from_secs(config.health_check_interval),
         })
     }
-    
+
     pub async fn generate(
         &self,
         prompt: &str,
@@ -99,12 +99,12 @@ impl CloudManager {
                 match provider.generate(prompt, config).await {
                     Ok(response) => return Ok(response),
                     Err(e) => {
-                        log::warn!("Provider {} failed: {}", provider_name, e);
+                        log::warn!("Provider {provider_name} failed: {e}");
                     }
                 }
             }
         }
-        
+
         // Try all healthy providers
         let healthy_providers = self.get_healthy_providers().await;
         for provider_name in healthy_providers {
@@ -112,76 +112,76 @@ impl CloudManager {
                 match provider.generate(prompt, config).await {
                     Ok(response) => return Ok(response),
                     Err(e) => {
-                        log::warn!("Provider {} failed: {}", provider_name, e);
+                        log::warn!("Provider {provider_name} failed: {e}");
                     }
                 }
             }
         }
-        
+
         // Fallback to local if enabled
         if self.fallback_to_local {
-            return Err(anyhow::anyhow!("All cloud providers failed and fallback to local not implemented"));
+            return Err(anyhow::anyhow!(
+                "All cloud providers failed and fallback to local not implemented"
+            ));
         }
-        
+
         Err(anyhow::anyhow!("All cloud providers failed"))
     }
-    
+
     pub async fn get_healthy_providers(&self) -> Vec<String> {
         let mut healthy = Vec::new();
         let health_cache = self.health_cache.read().await;
-        
-        for (name, _provider) in &self.providers {
+
+        for name in self.providers.keys() {
             let is_healthy = health_cache
                 .get(name)
                 .map(|status| status.healthy)
                 .unwrap_or(true); // Default to healthy if not cached
-            
+
             if is_healthy {
                 healthy.push(name.clone());
             }
         }
-        
+
         healthy
     }
-    
+
     pub async fn check_all_health(&self) -> HashMap<String, HealthStatus> {
         let mut results = HashMap::new();
-        
+
         for (name, provider) in &self.providers {
             let status = provider.check_health().await;
             let status_clone = status.clone();
             results.insert(name.clone(), status);
-            
+
             // Update cache
             let mut cache = self.health_cache.write().await;
             cache.insert(name.clone(), status_clone);
         }
-        
+
         results
     }
-    
-    pub async fn get_cost_estimates(&self,
-        tokens: usize,
-    ) -> HashMap<String, f64> {
+
+    pub async fn get_cost_estimates(&self, tokens: usize) -> HashMap<String, f64> {
         let mut estimates = HashMap::new();
-        
+
         for (name, provider) in &self.providers {
             let cost = provider.get_cost_estimate(tokens);
             estimates.insert(name.clone(), cost);
         }
-        
+
         estimates
     }
 }
 
-pub mod openai;
 pub mod anthropic;
 pub mod local;
+pub mod openai;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_cloud_manager_creation() {
         let config = CloudConfig {
@@ -197,11 +197,11 @@ mod tests {
             fallback_to_local: true,
             health_check_interval: 60,
         };
-        
+
         let manager = CloudManager::new(config).unwrap();
         assert_eq!(manager.providers.len(), 1);
     }
-    
+
     #[tokio::test]
     async fn test_health_check_caching() {
         let config = CloudConfig {
@@ -209,7 +209,7 @@ mod tests {
             fallback_to_local: true,
             health_check_interval: 60,
         };
-        
+
         let manager = CloudManager::new(config).unwrap();
         let health = manager.check_all_health().await;
         assert!(health.is_empty());

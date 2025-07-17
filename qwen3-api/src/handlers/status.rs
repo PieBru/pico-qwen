@@ -41,22 +41,23 @@ pub struct SystemInfo {
 }
 
 // Global static for server start time
-static SERVER_START_TIME: once_cell::sync::Lazy<Instant> = 
-    once_cell::sync::Lazy::new(Instant::now);
+static SERVER_START_TIME: once_cell::sync::Lazy<Instant> = once_cell::sync::Lazy::new(Instant::now);
 
 pub async fn server_status(State(state): State<AppState>) -> Json<ServerStatus> {
     let uptime = SERVER_START_TIME.elapsed();
-    let active_requests = state.active_requests.load(std::sync::atomic::Ordering::Relaxed);
-    
+    let active_requests = state
+        .active_requests
+        .load(std::sync::atomic::Ordering::Relaxed);
+
     // Get system memory info
     let system_info = get_system_info();
-    
+
     // Get loaded models with detailed stats
     let loaded_models = get_loaded_models_status(&state);
-    
+
     // Calculate total memory usage
     let total_memory_mb = loaded_models.iter().map(|m| m.memory_usage_mb).sum();
-    
+
     let status = ServerStatus {
         uptime,
         active_requests,
@@ -64,27 +65,31 @@ pub async fn server_status(State(state): State<AppState>) -> Json<ServerStatus> 
         total_memory_mb,
         system_info,
     };
-    
+
     Json(status)
 }
 
 fn get_loaded_models_status(state: &AppState) -> Vec<LoadedModelStatus> {
     let mut models = Vec::new();
-    
+
     for entry in state.models.iter() {
         let model = entry.value();
         let now = Instant::now();
-        
+
         // Estimate memory usage based on model size and quantization
         let memory_usage_mb = estimate_memory_usage(&model.info);
-        
+
         let inference_stats = InferenceStats {
-            total_requests: model.request_count.load(std::sync::atomic::Ordering::Relaxed),
-            total_tokens_generated: model.total_tokens_generated.load(std::sync::atomic::Ordering::Relaxed),
+            total_requests: model
+                .request_count
+                .load(std::sync::atomic::Ordering::Relaxed),
+            total_tokens_generated: model
+                .total_tokens_generated
+                .load(std::sync::atomic::Ordering::Relaxed),
             avg_tokens_per_sec: 0.0, // Would calculate from actual usage
             last_inference_at: model.last_inference_at.map(|t| now.duration_since(t)),
         };
-        
+
         let status = LoadedModelStatus {
             id: model.info.id.clone(),
             size_mb: model.info.size as f64 / (1024.0 * 1024.0),
@@ -93,17 +98,17 @@ fn get_loaded_models_status(state: &AppState) -> Vec<LoadedModelStatus> {
             inference_stats,
             memory_usage_mb,
         };
-        
+
         models.push(status);
     }
-    
+
     models
 }
 
 fn estimate_memory_usage(info: &crate::state::ModelInfo) -> f64 {
     // Rough estimation based on model size and quantization
     let base_size_mb = info.size as f64 / (1024.0 * 1024.0);
-    
+
     // Add overhead for runtime data structures
     let overhead_multiplier = match info.quantization.as_str() {
         "int4" => 1.2,
@@ -112,21 +117,21 @@ fn estimate_memory_usage(info: &crate::state::ModelInfo) -> f64 {
         "fp32" => 2.0,
         _ => 1.3,
     };
-    
+
     base_size_mb * overhead_multiplier
 }
 
 fn get_system_info() -> SystemInfo {
     use sysinfo::System;
-    
+
     let mut sys = System::new_all();
     sys.refresh_memory();
-    
+
     let total_memory = sys.total_memory() as f64 / (1024.0 * 1024.0 * 1024.0);
     let available_memory = sys.available_memory() as f64 / (1024.0 * 1024.0 * 1024.0);
     let used_memory = sys.used_memory() as f64 / (1024.0 * 1024.0 * 1024.0);
     let memory_usage_percent = (used_memory / total_memory) * 100.0;
-    
+
     SystemInfo {
         cpu_cores: sys.cpus().len(),
         total_memory_gb: total_memory,

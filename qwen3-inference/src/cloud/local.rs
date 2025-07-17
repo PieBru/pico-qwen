@@ -1,6 +1,6 @@
 use super::*;
-use std::time::Duration;
 use anyhow::Result;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct LocalProvider {
@@ -15,15 +15,15 @@ impl LocalProvider {
 
 #[async_trait]
 impl CloudProvider for LocalProvider {
-    async fn generate(&self, _prompt: &str, _config: &InferenceConfig
-    ) -> Result<String> {
+    async fn generate(&self, _prompt: &str, _config: &InferenceConfig) -> Result<String> {
         // This is a placeholder for local inference
         // In a real implementation, this would use the local Qwen3 model
-        Err(anyhow::anyhow!("Local inference not implemented in cloud provider"))
+        Err(anyhow::anyhow!(
+            "Local inference not implemented in cloud provider"
+        ))
     }
 
-    async fn check_health(&self
-    ) -> HealthStatus {
+    async fn check_health(&self) -> HealthStatus {
         HealthStatus {
             healthy: true,
             latency: Duration::from_millis(0),
@@ -36,13 +36,11 @@ impl CloudProvider for LocalProvider {
         0.0 // Local inference is free
     }
 
-    fn get_latency_estimate(&self
-    ) -> Duration {
+    fn get_latency_estimate(&self) -> Duration {
         Duration::from_millis(100) // Fast local inference
     }
 
-    fn get_name(&self
-    ) -> &str {
+    fn get_name(&self) -> &str {
         &self.config.name
     }
 }
@@ -50,7 +48,7 @@ impl CloudProvider for LocalProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_local_provider() {
         let config = CloudProviderConfig {
@@ -62,13 +60,13 @@ mod tests {
             temperature: 0.7,
             timeout: Duration::from_secs(30),
         };
-        
+
         let provider = LocalProvider::new(config);
         assert_eq!(provider.get_name(), "local");
         assert_eq!(provider.get_cost_estimate(1000), 0.0);
         assert!(provider.get_latency_estimate() < Duration::from_millis(1000));
     }
-    
+
     #[tokio::test]
     async fn test_local_health() {
         let config = CloudProviderConfig {
@@ -80,7 +78,7 @@ mod tests {
             temperature: 0.7,
             timeout: Duration::from_secs(30),
         };
-        
+
         let provider = LocalProvider::new(config);
         let health = provider.check_health().await;
         assert!(health.healthy);

@@ -1,10 +1,10 @@
 use anyhow::Result;
 use dashmap::DashMap;
 use qwen3_inference::ExtendedTransformer;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
@@ -43,19 +43,16 @@ impl AppState {
         }
     }
 
-    pub async fn load_model(
-        &self,
-        model_id: &str,
-        quantization: Option<&str>,
-    ) -> Result<String> {
-        let model_path = PathBuf::from(&self.config.models.directory).join(format!("{}.bin", model_id));
-        
+    pub async fn load_model(&self, model_id: &str, quantization: Option<&str>) -> Result<String> {
+        let model_path =
+            PathBuf::from(&self.config.models.directory).join(format!("{model_id}.bin"));
+
         if !model_path.exists() {
             anyhow::bail!("Model file not found: {:?}", model_path);
         }
 
         let transformer = ExtendedTransformer::new(&model_path)?;
-        
+
         let info = ModelInfo {
             id: model_id.to_string(),
             path: model_path.clone(),
@@ -80,16 +77,14 @@ impl AppState {
         Ok(info.id)
     }
 
-    pub fn unload_model(&self, model_id: &str
-    ) -> Result<()> {
+    pub fn unload_model(&self, model_id: &str) -> Result<()> {
         if self.models.remove(model_id).is_none() {
             anyhow::bail!("Model not found: {}", model_id);
         }
         Ok(())
     }
 
-    pub fn get_model(&self, model_id: &str
-    ) -> Option<std::sync::Arc<LoadedModel>> {
+    pub fn get_model(&self, model_id: &str) -> Option<std::sync::Arc<LoadedModel>> {
         self.models.get(model_id).map(|entry| {
             let loaded_model = entry.value();
             std::sync::Arc::new(LoadedModel {
@@ -98,18 +93,21 @@ impl AppState {
                 last_used: loaded_model.last_used,
                 loaded_at: loaded_model.loaded_at,
                 request_count: std::sync::atomic::AtomicU64::new(
-                    loaded_model.request_count.load(std::sync::atomic::Ordering::Relaxed)
+                    loaded_model
+                        .request_count
+                        .load(std::sync::atomic::Ordering::Relaxed),
                 ),
                 total_tokens_generated: std::sync::atomic::AtomicU64::new(
-                    loaded_model.total_tokens_generated.load(std::sync::atomic::Ordering::Relaxed)
+                    loaded_model
+                        .total_tokens_generated
+                        .load(std::sync::atomic::Ordering::Relaxed),
                 ),
                 last_inference_at: loaded_model.last_inference_at,
             })
         })
     }
 
-    pub fn list_models(&self
-    ) -> Vec<ModelInfo> {
+    pub fn list_models(&self) -> Vec<ModelInfo> {
         self.models
             .iter()
             .map(|entry| entry.value().info.clone())
@@ -121,14 +119,14 @@ impl AppState {
             // Simple LRU eviction - remove oldest model
             let mut oldest = None;
             let mut oldest_time = std::time::Instant::now();
-            
+
             for entry in self.models.iter() {
                 if entry.last_used < oldest_time {
                     oldest = Some(entry.key().clone());
                     oldest_time = entry.last_used;
                 }
             }
-            
+
             if let Some(model_id) = oldest {
                 self.unload_model(&model_id)?;
                 tracing::info!("Evicted model {} due to memory limits", model_id);

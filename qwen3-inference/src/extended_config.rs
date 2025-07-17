@@ -1,9 +1,9 @@
-use std::path::PathBuf;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 use crate::configuration::ModelConfig;
-use crate::quantization::{QuantizationLevel, CpuTarget, MemoryLimits, CloudConfig};
+use crate::quantization::{CloudConfig, CpuTarget, MemoryLimits, QuantizationLevel};
 
 /// Extended model configuration with advanced features
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,7 +66,10 @@ pub enum ContextManagement {
     /// Fixed context window with truncation
     Fixed { max_length: usize },
     /// Sliding window with attention sink
-    Sliding { window_size: usize, sink_size: usize },
+    Sliding {
+        window_size: usize,
+        sink_size: usize,
+    },
     /// Dynamic context based on memory usage
     Dynamic { max_memory_ratio: f32 },
 }
@@ -179,11 +182,11 @@ impl ExtendedModelConfig {
     pub fn estimate_memory_usage(&self) -> Result<usize> {
         let model_size = self.base.dim * self.base.vocab_size * 4; // Rough estimate
         let quantized_size = self.quantization.memory_usage(model_size);
-        
+
         // Add overhead for KV cache, activations, etc.
         let kv_cache_size = self.base.n_layers * self.base.seq_len * self.base.dim * 2;
         let activation_size = self.base.seq_len * self.base.dim * 4;
-        
+
         let total_bytes = quantized_size + kv_cache_size + activation_size;
         Ok(total_bytes / (1024 * 1024)) // Convert to MB
     }
@@ -206,23 +209,22 @@ impl ExtendedModelConfig {
     pub fn from_file(path: impl Into<PathBuf>) -> Result<Self> {
         let path = path.into();
         let content = std::fs::read_to_string(&path)
-            .with_context(|| format!("Failed to read config file: {:?}", path))?;
-        
+            .with_context(|| format!("Failed to read config file: {path:?}"))?;
+
         let config: Self = toml::from_str(&content)
-            .with_context(|| format!("Failed to parse config file: {:?}", path))?;
-        
+            .with_context(|| format!("Failed to parse config file: {path:?}"))?;
+
         Ok(config)
     }
 
     /// Saves configuration to TOML file
     pub fn save_to_file(&self, path: impl Into<PathBuf>) -> Result<()> {
         let path = path.into();
-        let content = toml::to_string_pretty(self)
-            .context("Failed to serialize configuration")?;
-        
+        let content = toml::to_string_pretty(self).context("Failed to serialize configuration")?;
+
         std::fs::write(&path, content)
-            .with_context(|| format!("Failed to write config file: {:?}", path))?;
-        
+            .with_context(|| format!("Failed to write config file: {path:?}"))?;
+
         Ok(())
     }
 
@@ -299,7 +301,7 @@ impl std::str::FromStr for LogLevel {
             "info" => Ok(LogLevel::Info),
             "debug" => Ok(LogLevel::Debug),
             "trace" => Ok(LogLevel::Trace),
-            _ => Err(format!("Invalid log level: {}", s)),
+            _ => Err(format!("Invalid log level: {s}")),
         }
     }
 }
@@ -347,7 +349,7 @@ mod tests {
         let config = ExtendedModelConfig::new(base);
         let serialized = toml::to_string(&config).unwrap();
         let deserialized: ExtendedModelConfig = toml::from_str(&serialized).unwrap();
-        
+
         assert_eq!(config.base.dim, deserialized.base.dim);
         assert_eq!(config.quantization, deserialized.quantization);
     }

@@ -32,16 +32,13 @@ pub struct WebSocketResponse {
     pub data: serde_json::Value,
 }
 
-pub async fn websocket_handler(
-    ws: WebSocketUpgrade,
-    State(config): State<Config>,
-) -> Response {
+pub async fn websocket_handler(ws: WebSocketUpgrade, State(config): State<Config>) -> Response {
     ws.on_upgrade(move |socket| handle_websocket(socket, config))
 }
 
 async fn handle_websocket(socket: WebSocket, config: Config) {
     let (mut sender, mut receiver) = socket.split();
-    
+
     while let Some(Ok(msg)) = receiver.next().await {
         match msg {
             Message::Text(text) => {
@@ -57,7 +54,8 @@ async fn handle_websocket(socket: WebSocket, config: Config) {
                                     serde_json::to_string(&WebSocketResponse {
                                         action: "pong".to_string(),
                                         data: json!({"timestamp": timestamp}),
-                                    }).unwrap(),
+                                    })
+                                    .unwrap(),
                                 ))
                                 .await;
                         }
@@ -65,9 +63,7 @@ async fn handle_websocket(socket: WebSocket, config: Config) {
                             // Forward to API server
                             let response = forward_to_api(&config, &request).await;
                             let _ = sender
-                                .send(Message::Text(
-                                    serde_json::to_string(&response).unwrap(),
-                                ))
+                                .send(Message::Text(serde_json::to_string(&response).unwrap()))
                                 .await;
                         }
                         _ => {
@@ -76,7 +72,8 @@ async fn handle_websocket(socket: WebSocket, config: Config) {
                                     serde_json::to_string(&WebSocketResponse {
                                         action: "error".to_string(),
                                         data: json!({"message": "Unknown action"}),
-                                    }).unwrap(),
+                                    })
+                                    .unwrap(),
                                 ))
                                 .await;
                         }
@@ -84,7 +81,7 @@ async fn handle_websocket(socket: WebSocket, config: Config) {
                 }
             }
             Message::Close(_) => break,
-            _ => {},
+            _ => {}
         }
     }
 }
