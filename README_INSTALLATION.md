@@ -5,7 +5,7 @@
 ### Arch Linux (Primary)
 ```bash
 # Install system dependencies
-sudo pacman -S git base-devel pkg-config openssl
+sudo pacman -S git base-devel pkg-config openssl rust ruff
 
 # Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -20,7 +20,7 @@ sudo apt update && sudo apt install git build-essential pkg-config libssl-dev
 # CentOS/RHEL/Fedora
 sudo dnf install git gcc pkg-config openssl-devel
 
-# Install Rust
+# Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source ~/.cargo/env
 ```
@@ -39,7 +39,7 @@ cd pico-qwen
 cargo build --release
 
 # Build specific components
-cargo build --release -p qwen3-cli      # CLI only
+cargo build --release -p qwen3-cli     # CLI only
 cargo build --release -p qwen3-api     # API server only
 cargo build --release -p qwen3-web     # WebUI only
 ```
@@ -62,20 +62,20 @@ mkdir -p ~/HuggingFace
 cd ~/HuggingFace
 
 # Download lightweight models
-git clone --depth 1 https://huggingface.co/Qwen/Qwen3-0.6B      # ~1.2 GB
-git clone --depth 1 https://huggingface.co/Qwen/Qwen3-1.7B      # ~3.4 GB
+git clone --depth 1 https://huggingface.co/Qwen/Qwen3-0.6B
+git clone --depth 1 https://huggingface.co/Qwen/Qwen3-1.7B
 
 # For larger models (ensure adequate disk space)
-# git clone https://huggingface.co/Qwen/Qwen3-4B      # ~8 GB
-# git clone https://huggingface.co/Qwen/Qwen3-8B      # ~16 GB
-# git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B  # ~16 GB (recommended - more performant than Qwen3-8B)
+# git clone https://huggingface.co/Qwen/Qwen3-4B
+# git clone https://huggingface.co/Qwen/Qwen3-8B
+# git clone https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B
 ```
 
 ### Export Models
 ```bash
 cd ~/pico-qwen
 
-# Export with different quantization levels
+# Export with different quantization levels (FIXME: needs testing)
 # INT8 (recommended for most systems)
 cargo run --release -p qwen3-cli -- export ~/HuggingFace/Qwen3-0.6B ~/HuggingFace/Qwen3-0.6B-int8.bin --group-size 64
 
@@ -138,16 +138,16 @@ cargo clippy --all-targets --all-features
 # Run comprehensive tests
 cargo test --release --all
 
-# Cross-compilation setup
+# Cross-compilation setup (FIXME: needs testing)
 rustup target add aarch64-unknown-linux-gnu
 rustup target add x86_64-unknown-linux-musl
 ```
 
-## Service Installation
+## Service Installation (FIXME: needs testing)
 
 ### systemd Service (User)
 ```bash
-# Create user service
+# Create user service (FIXME: needs testing)
 cat > ~/.config/systemd/user/pico-qwen.service << 'EOF'
 [Unit]
 Description=Pico-Qwen API Server
@@ -181,7 +181,7 @@ sudo systemctl start pico-qwen
 
 ## Docker Installation
 
-### Build Docker Image
+### Build Docker Image (FIXME: needs testing)
 ```bash
 # Build from source
 docker build -t pico-qwen:latest .
@@ -195,7 +195,7 @@ docker run -d \
   pico-qwen:latest
 ```
 
-### Docker Compose
+### Docker Compose (FIXME: needs testing)
 ```bash
 # Create docker-compose.yml
 cat > docker-compose.yml << 'EOF'
@@ -220,20 +220,29 @@ docker-compose up -d
 
 ### Basic Tests
 ```bash
-# Test CPU detection
-cargo run --release -p qwen3-cli -- cpu-info
+# Test CLI functionality
+cargo run --release -p qwen3-cli -- --help
 
-# Test model loading
+# Test model discovery
+cargo run --release -p qwen3-cli -- models -d ~/HuggingFace
+
+# Test model loading (if you have exported models)
 cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin --mode chat --input "Hello"
 
-# Test API server
-curl -X GET http://localhost:58080/api/v1/health
+# Test API server (after starting it)
+curl -X GET http://localhost:58081/api/v1/health
+
+# Test all components
+cargo test --release --all
 ```
 
 ### Resource Usage Check
 ```bash
 # Monitor memory usage
-htop -p $(pgrep pico-qwen)
+htop -p $(pgrep -f qwen3- | head -n1) 2>/dev/null || htop -p $(pgrep cargo | head -n1) 2>/dev/null || htop
+
+# Or use ps for process monitoring
+ps aux | grep qwen3- | grep -v grep
 
 # Check disk space
 du -h ~/HuggingFace/
@@ -246,7 +255,7 @@ du -h ~/HuggingFace/
 #### "No such file or directory" errors
 ```bash
 # Ensure all dependencies are installed
-sudo pacman -S base-devel pkg-config openssl
+sudo pacman -S base-devel pkg-config openssl rust ruff
 ```
 
 #### Memory issues during build

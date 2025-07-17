@@ -2,15 +2,13 @@
 
 **Ultra-lightweight Qwen3 inference for low-resource systems**
 
-> Started as an experimental fork of [qwen3-rs](https://github.com/reinterpretcat/qwen3-rs) especially useful for MiniPCs, SBCs,low-power servers and all CPU-only light weight efficient LLM inferencing needs, [pico-qwen](https://github.com/PieBru/pico-qwen) then evolved as a independent project with more additional features.
+> Started as an experimental fork of [qwen3-rs](https://github.com/reinterpretcat/qwen3-rs) especially useful for MiniPCs, SBCs,low-power servers and all CPU-only light weight efficient LLM inferencing needs, [pico-qwen](https://github.com/PieBru/pico-qwen) then evolved as a independent project with additional features.
 
 ## TL;DR
 
 ```bash
 # Quick install (Arch Linux)
-sudo pacman -S git base-devel pkg-config openssl
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source ~/.cargo/env
+sudo pacman -S git base-devel pkg-config openssl rust ruff
 
 cd && git clone https://github.com/PieBru/pico-qwen.git && cd pico-qwen
 cargo build --release
@@ -28,7 +26,7 @@ cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin 
 
 ## 🎯 What is pico-qwen?
 
-**pico-qwen** extends [qwen3-rs](https://github.com/reinterpretcat/qwen3-rs) with production features for **very low-resource systems** while maintaining educational clarity:
+**pico-qwen** targets **very low-resource systems** while maintaining educational clarity:
 
 - **Educational foundation**: Learn transformer internals in Rust
 - **Low-resource optimized**: Runs on <8GB RAM systems  
@@ -44,15 +42,14 @@ cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin 
 | **Raspberry Pi 4** | ARM Cortex-A72 | 4GB | 4GB | Home automation |
 | **Intel N100** | 4-core x86 | 8GB | 8GB | MiniPC |
 | **Intel i9-14900HX** | 24-core x86 | 16GB+ | 16GB+ | Development |
+| _More to come_ | | | | |
 
 ## 🚀 Quick Start
 
 ### 1. Installation
 ```bash
 # Arch Linux (recommended)
-sudo pacman -S git base-devel pkg-config openssl
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source ~/.cargo/env
+sudo pacman -S git base-devel pkg-config openssl rust ruff
 
 # Build from source
 cargo build --release
@@ -102,7 +99,7 @@ cargo run --release -p qwen3-web
 - [**README_CREDITS.md**](README_CREDITS.md) - Acknowledgments and project foundations
 
 ### Key Features
-- **Phases 1-7**: Core infrastructure, API server, WebUI, MCP agents, hybrid cloud, CPU optimization, deployment
+- **Baseline**: Core infrastructure, API server, WebUI, MCP agents, hybrid cloud, CPU optimization, deployment
 - **Quantization**: INT4, INT8, FP16, FP32 with configurable group sizes
 - **CPU Optimization**: Runtime detection for Intel, ARM, and generic processors
 - **Service Management**: systemd integration and Docker support
@@ -145,7 +142,7 @@ See [README_DEVELOPMENT.md](README_DEVELOPMENT.md) for development setup.
 
 ## 📄 License
 
-Maintains the same license as [qwen3-rs](https://github.com/reinterpretcat/qwen3-rs). See individual project repositories for specific license details.
+Licensed under the Apache License 2.0. See the LICENSE file for details.
 
 ---
 

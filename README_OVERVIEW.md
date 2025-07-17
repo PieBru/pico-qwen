@@ -36,10 +36,12 @@
 
 ## Architecture Philosophy
 
-pico-qwen maintains the original **forked project posture** of qwen3-rs, meaning:
-- We preserve the original architecture and educational clarity
-- Each new feature is developed in separate git branches for potential upstream contribution
-- We reuse as much original code as possible at every development stage
-- Documentation is split between project-level (README files) and detailed technical docs (./docs/ directory)
+pico-qwen has evolved from a **fork** to an **independent project** that treats qwen3-rs as a foundational library, similar to how it integrates PocketFlow. This architectural shift means:
 
-This approach ensures that pico-qwen remains a **feature-enriched extension** rather than a complete rewrite, making it easy to merge enhancements back to the original qwen3-rs project when appropriate.
+- **Independent Evolution**: pico-qwen develops its own architecture while maintaining compatibility with qwen3-rs core concepts
+- **Library Integration**: qwen3-rs serves as the underlying transformer implementation layer, while pico-qwen adds production features
+- **Feature Stacking**: New capabilities (API server, WebUI, MCP agents, hybrid cloud) are built as modular layers on top of the base inference engine
+- **Selective Reuse**: We leverage qwen3-rs for core transformer operations while replacing or extending components as needed for low-resource optimization
+- **Documentation Hierarchy**: Technical docs maintain clear separation between qwen3-rs foundation layer (./docs/qwen3-rs/) and pico-qwen extensions (./docs/pico-qwen/)
+
+This approach enables rapid innovation in the pico-qwen ecosystem while preserving the educational value and stability of the underlying qwen3-rs foundation.

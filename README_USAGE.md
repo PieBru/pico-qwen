@@ -5,26 +5,29 @@
 ### Basic Inference
 ```bash
 # Interactive chat mode - use full path to .bin file
-./target/release/qwen3 inference /home/user/HuggingFace/Qwen3-0.6B-int8.bin -m chat
+./target/release/qwen3 inference $HOME/HuggingFace/Qwen3-0.6B-int8.bin -m chat
 
-# Generate mode with prompt
-cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin -m generate -i "Your prompt here"
+# Generate mode with prompt - use stricter parameters for coherence
+cargo run --release -p qwen3-cli -- inference $HOME/HuggingFace/Qwen3-0.6B-int8.bin -m generate -i "Hello" -t 0.1 -p 0.95 -s 42
 
 # With custom parameters
-cargo run --release -p qwen3-cli -- inference ./models/Qwen3-0.6B-int8.bin -t 0.7 -p 0.8 -s 42
+cargo run --release -p qwen3-cli -- inference $HOME/HuggingFace/Qwen3-0.6B-int8.bin -t 0.7 -p 0.8 -s 42
 ```
 
 ### CLI Options
 ```bash
 # Export models - specify full directory path and output filename
 # Directory must contain: config.json, tokenizer.json, *.safetensors files
-cargo run --release -p qwen3-cli -- export ~/Downloads/Qwen3-0.6B ~/HuggingFace/Qwen3-0.6B-int8 --group-size 64
+cargo run --release -p qwen3-cli -- export $HOME/Downloads/Qwen3-0.6B $HOME/HuggingFace/Qwen3-0.6B-int8 --group-size 64
 
 # List available models - scans directory for .bin files
-cargo run --release -p qwen3-cli -- models
+cargo run --release -p qwen3-cli -- models --directory $HOME/HuggingFace
 # With options:
-cargo run --release -p qwen3-cli -- models --directory ~/HuggingFace --format json
+cargo run --release -p qwen3-cli -- models --directory $HOME/HuggingFace --format json
 # Formats: table|json|list
+
+# Or use full path
+cargo run --release -p qwen3-cli -- models --directory /home/$USER/HuggingFace
 
 # Available options:
 # --group-size: Quantization group size (32, 64, 128, 256)
@@ -295,8 +298,8 @@ parallel_strategy = "rayon"
 
 ### CPU Optimization
 ```bash
-# Check your CPU features
-cargo run --release -p qwen3-cli -- cpu-info
+# Check your CPU features (CPU detection happens automatically)
+# Use the built-in CPU optimization system
 
 # Manual CPU target selection
 cargo run --release -p qwen3-cli -- inference model.bin --cpu-target intel-i9-14900hx
@@ -333,7 +336,7 @@ systemctl --user status pico-qwen
 journalctl --user -u pico-qwen -f
 
 # Monitor resource usage
-htop -p $(pgrep pico-qwen)
+htop -p $(pgrep -f qwen3- | head -n1) 2>/dev/null || htop
 ```
 
 ## Troubleshooting Common Issues
@@ -341,10 +344,10 @@ htop -p $(pgrep pico-qwen)
 ### Model Loading Issues
 ```bash
 # Check model file integrity
-ls -la ~/HuggingFace/*.bin
+ls -la $HOME/HuggingFace/*.bin
 
 # Verify model format
-cargo run --release -p qwen3-cli -- info ~/HuggingFace/model.bin
+cargo run --release -p qwen3-cli -- info $HOME/HuggingFace/model.bin
 ```
 
 ### Memory Issues

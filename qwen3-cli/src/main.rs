@@ -220,38 +220,51 @@ struct ModelInfo {
 fn run_models_command(matches: &ArgMatches) -> Result<()> {
     let directory = matches.get_one::<String>("directory").unwrap();
     let format = matches.get_one::<String>("format").unwrap();
-    
+
     let models = discover_models(directory)?;
-    
+
     match format.as_str() {
         "json" => {
             println!("{}", serde_json::to_string_pretty(&models)?);
-        },
+        }
         "list" => {
             for model in models {
                 println!("{}", model.name);
             }
-        },
+        }
         "table" | _ => {
-            println!("┌─────────────────────────────────────────┬────────────────┬────────────┬────────┬─────────────────────┐");
-            println!("│ Model Name                              │ Size           │ Format     │ Path   │ Modified            │");
-            println!("├─────────────────────────────────────────┼────────────────┼────────────┼────────┼─────────────────────┤");
-            
+            println!(
+                "┌─────────────────────────────────────────┬────────────────┬────────────┬────────┬─────────────────────┐"
+            );
+            println!(
+                "│ Model Name                              │ Size           │ Format     │ Path   │ Modified            │"
+            );
+            println!(
+                "├─────────────────────────────────────────┼────────────────┼────────────┼────────┼─────────────────────┤"
+            );
+
             for model in models {
                 let size_mb = model.size as f64 / (1024.0 * 1024.0);
-                println!("│ {:<39} │ {:<14} │ {:<10} │ {:<6} │ {:<19} │",
+                println!(
+                    "│ {:<39} │ {:<14} │ {:<10} │ {:<6} │ {:<19} │",
                     model.name,
                     format!("{:.1} MB", size_mb),
                     model.format,
-                    if model.path.contains("HuggingFace") { "HF" } else { "custom" },
+                    if model.path.contains("HuggingFace") {
+                        "HF"
+                    } else {
+                        "custom"
+                    },
                     model.modified
                 );
             }
-            
-            println!("└─────────────────────────────────────────┴────────────────┴────────────┴────────┴─────────────────────┘");
+
+            println!(
+                "└─────────────────────────────────────────┴────────────────┴────────────┴────────┴─────────────────────┘"
+            );
         }
     }
-    
+
     Ok(())
 }
 
@@ -259,22 +272,23 @@ fn run_models_command(matches: &ArgMatches) -> Result<()> {
 fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
     let mut models = Vec::new();
     let path = Path::new(directory);
-    
+
     if !path.exists() {
         anyhow::bail!("Directory does not exist: {}", directory);
     }
-    
+
     // Scan for .bin files
     if let Ok(entries) = std::fs::read_dir(path) {
         for entry in entries.flatten() {
             let file_path = entry.path();
             if file_path.extension().and_then(|s| s.to_str()) == Some("bin") {
                 if let Ok(metadata) = entry.metadata() {
-                    let name = file_path.file_stem()
+                    let name = file_path
+                        .file_stem()
                         .and_then(|s| s.to_str())
                         .unwrap_or("unknown")
                         .to_string();
-                    
+
                     let format = if name.contains("int4") {
                         "INT4"
                     } else if name.contains("int8") {
@@ -283,12 +297,14 @@ fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
                         "FP16"
                     } else {
                         "BINARY"
-                    }.to_string();
-                    
-                    let modified = metadata.modified()
-                        .map(|t| format!("{:?}", t))
+                    }
+                    .to_string();
+
+                    let modified = metadata
+                        .modified()
+                        .map(|t| format!("{t:?}"))
                         .unwrap_or_else(|_| "unknown".to_string());
-                    
+
                     models.push(ModelInfo {
                         name,
                         path: file_path.to_string_lossy().to_string(),
@@ -300,10 +316,10 @@ fn discover_models(directory: &str) -> Result<Vec<ModelInfo>> {
             }
         }
     }
-    
+
     // Sort by name for consistent output
     models.sort_by(|a, b| a.name.cmp(&b.name));
-    
+
     Ok(models)
 }
 
