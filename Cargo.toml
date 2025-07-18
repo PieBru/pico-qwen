@@ -5,7 +5,8 @@ members = [
     "qwen3-export",
     "qwen3-inference",
     "qwen3-api",
-    "qwen3-web"
+    "qwen3-web",
+    "qwen3-inference-c"
 ]
 
 [workspace.package]
@@ -44,6 +45,7 @@ signal-hook = "0.3"
 
 qwen3-export = { path = "qwen3-export" }
 qwen3-inference = { path = "qwen3-inference" }
+qwen3-inference-c = { path = "qwen3-inference-c" }
 
 [profile.release]
 opt-level = 3

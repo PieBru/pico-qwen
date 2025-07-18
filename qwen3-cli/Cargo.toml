@@ -16,6 +16,7 @@ path = "src/main.rs"
 [dependencies]
 qwen3-export =  { workspace = true }
 qwen3-inference = { workspace = true }
+qwen3-inference-c = { path = "../qwen3-inference-c" }
 
 anyhow = { workspace = true }
 clap = { workspace = true }

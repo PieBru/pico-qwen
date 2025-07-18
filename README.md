@@ -24,15 +24,32 @@ cargo run --release -p qwen3-cli -- export ~/HuggingFace/Qwen3-0.6B ~/HuggingFac
 cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B-int8.bin --mode chat
 ```
 
+## Our vision and motivations, as of July 2025
+
+Except for some LLM inference niches, such as for a single user running fully-local on a PC, GPU inference will be mainly centralized by cloud providers, or decentralized to the productivity endpoints and mainly served from more flexible fast-RAM systems.
+We envision that LLM inference (and related services like research, specialized ranked search, coding IDE, etc.) which are architected to serve thousands to millions active users will be high-tech GPU-bound and served from cloud giga-structures.
+On the other side, we feel there will be an ever evolving need of decentralized AI serving, thanks to its intrinsic benefits that cloud AI serving can't provide, such as:
+  * privacy guaranteed by design;
+  * resilience to internet and cloud services faults;
+  * inference server offloading by the edge;
+  * edge pre-processing before passing synthetic data to a server;
+  * long-term reduced costs.
+
+## Project development methodology: our vision as of July 2025
+
+* **Coding agents are reliable enough to be the default:** We've built and tested coding agents for years and realised recently that reliability crossed an invisible threshold so we now prefer starting most tasks with coding agents.
+* **Coding agents are going to get much better:** Coding agents have improved rapidly, and we expect this trend to continue. Imagine that in six months, 50% of the current failure modes of coding agents will get fixed, and six months after that another 50%. What will we (engineers) be spending our time on in that world? What tools would help us do that work most efficiently?
+* **The SOTA will improve:** Foundational model labs and application layer startups will continuously leap-frog each other to build state-of-the-art coding agents over the next 12m+. You shouldn't have to change your workflow or behaviour to be able to try out different coding agents.
+
 ## 🎯 What is pico-qwen?
 
 **pico-qwen** targets **very low-resource systems** while maintaining educational clarity:
 
 - **Educational foundation**: Learn transformer internals in Rust
-- **Low-resource optimized**: Runs on <8GB RAM systems  
-- **Multiple interfaces**: CLI + REST API + WebUI
-- **CPU-specific builds**: Intel N100, i9-14900HX, Raspberry Pi 4/5, more upon request
-- **Hybrid cloud/local**: Fallback between cloud and local inference
+- **Low-resource and edge optimized**: Runs on <8GB RAM systems
+- **Multiple interfaces**: CLI + REST API + MCP + WebUI
+- **CPU-specific builds**: Intel N100, i9-14900HX, Raspberry Pi 4/5, and more
+- **Performance, Hybrid cloud/local**: Optional automatic fallback between cloud and local inference
 - **MCP agents**: Multi-agent tool orchestration with [PocketFlow](https://github.com/The-Pocket/PocketFlow-Rust)
 
 ## 📊 Resource Requirements

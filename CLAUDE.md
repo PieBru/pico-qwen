@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**pico-qwen** is an experimental feature-enriched version of qwen3-rs targeting very low-resource systems. It's a Rust workspace implementing Qwen3 LLM inference with educational goals, focusing on transparency and minimal dependencies.
+**pico-qwen** is an experimental still ambitious project implementing CPU-only, highly optimized Qwen3 LLM inference and related tools, targeting very low-resource edge systems and systems with fast RAM and eventually fast SSD transfers rates that could usefully run the inference in RAM, without using a GPU. It's primarily a Rust workspace, plus some C and Python small parts, implementing Qwen3 LLM inference focusing on transparency and minimal dependencies.
 
 ## Workspace Architecture
 
@@ -154,5 +154,10 @@ cargo clippy --all-targets --all-features
 
 ## Planning Phase Guidelines
 
+## Tasks Execution Guidelines
+- Every time you complete a task, you MUST update the corresponding TASKS_*.md by marking the task complete, then update the corresponding README_*.md with the pertinent informations, such like feature details, setup, configuration, usage, testing, etc.
+
+## CI/CD Guidelines
+
 ### PocketFlow Integration
-- Every time you enter the planning phase for a feature that includes "PocketFlow", you MUST check the most up to date documentation using the "context7" MCP server.
+- Every time you enter the planning phase for a feature that includes "PocketFlow", you MUST check the most up to date documentation using the "context7" MCP server, together with PocketFlow.md, PocketFlow-Rust.md, PocketFlow-README.md, PocketFlow_Cookbook_40.md that contains architectural, coding and already solved pattern practical examples.

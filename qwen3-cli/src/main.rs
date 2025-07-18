@@ -29,12 +29,20 @@ fn export_subcommand() -> Command {
 /// Define the inference subcommand.
 fn inference_subcommand() -> Command {
     Command::new("inference")
-        .about("Qwen3 inference in Rust")
+        .about("Qwen3 inference with engine selection")
         .arg(
             Arg::new("checkpoint")
                 .help("Path to the .bin model file (e.g., ~/HuggingFace/Qwen3-0.6B-int8.bin)")
                 .required(true)
                 .index(1),
+        )
+        .arg(
+            Arg::new("engine")
+                .long("engine")
+                .short('e')
+                .value_name("STRING")
+                .help("Engine: rust|c [default: rust]")
+                .default_value("rust"),
         )
         .arg(
             Arg::new("temperature")
@@ -100,6 +108,12 @@ fn inference_subcommand() -> Command {
                 .help("Reasoning mode: 0=no thinking, 1=thinking [default: 0]")
                 .default_value("0")
                 .value_parser(clap::value_parser!(i32)),
+        )
+        .arg(
+            Arg::new("benchmark")
+                .long("benchmark")
+                .action(clap::ArgAction::SetTrue)
+                .help("Enable benchmark mode (shows performance metrics)"),
         )
 }
 
@@ -189,20 +203,53 @@ fn run_export_command(matches: &ArgMatches) -> Result<()> {
 
 /// Run the inference command with the provided arguments
 fn run_inference_command(matches: &ArgMatches) -> Result<()> {
-    let config = InferenceConfigBuilder::default()
-        .checkpoint_path(matches.get_one::<String>("checkpoint"))
-        .temperature(matches.get_one::<f32>("temperature").copied())
-        .topp(matches.get_one::<f32>("topp").copied())
-        .ctx_length(matches.get_one::<usize>("context").copied())
-        .mode(matches.get_one::<String>("mode"))
-        .prompt(matches.get_one::<String>("input"))
-        .system_prompt(matches.get_one::<String>("system"))
-        .enable_thinking(matches.get_one::<i32>("reasoning").map(|v| *v != 0))
-        .seed(matches.get_one::<u64>("seed").copied())
-        .build()
-        .map_err(|e| anyhow::anyhow!(e))?;
+    let engine = matches.get_one::<String>("engine").unwrap();
+    let checkpoint = matches.get_one::<String>("checkpoint").unwrap();
+    let benchmark = matches.get_flag("benchmark");
 
-    run_inference(config).map_err(|e| anyhow::anyhow!("Inference failed: {e}"))?;
+    match engine.as_str() {
+        "rust" => {
+            let checkpoint_str = matches.get_one::<String>("checkpoint").unwrap();
+            let config = InferenceConfigBuilder::default()
+                .checkpoint_path(Some(checkpoint_str))
+                .temperature(Some(*matches.get_one::<f32>("temperature").unwrap()))
+                .topp(Some(*matches.get_one::<f32>("topp").unwrap()))
+                .ctx_length(matches.get_one::<u32>("context").copied().map(|v| v as usize))
+                .mode(matches.get_one::<String>("mode"))
+                .prompt(matches.get_one::<String>("input"))
+                .system_prompt(matches.get_one::<String>("system"))
+                .enable_thinking(Some(*matches.get_one::<i32>("reasoning").unwrap() != 0))
+                .seed(Some(matches.get_one::<u64>("seed").copied().unwrap_or(42)))
+                .build()
+                .map_err(|e| anyhow::anyhow!(e))?;
+
+            if benchmark {
+                info!("Running Rust engine benchmark...");
+            }
+            
+            run_inference(config).map_err(|e| anyhow::anyhow!("Inference failed: {e}"))?;
+        }
+        "c" => {
+            let config = qwen3_inference_c::InferenceConfig {
+                checkpoint_path: checkpoint.clone(),
+                temperature: *matches.get_one::<f32>("temperature").unwrap(),
+                topp: *matches.get_one::<f32>("topp").unwrap(),
+                ctx_length: matches.get_one::<u32>("context").copied().map(|v| v as usize),
+                mode: matches.get_one::<String>("mode").unwrap().clone(),
+                prompt: matches.get_one::<String>("input").map(|s| s.clone()),
+                system_prompt: matches.get_one::<String>("system").map(|s| s.clone()),
+                enable_thinking: *matches.get_one::<i32>("reasoning").unwrap() != 0,
+                seed: matches.get_one::<u64>("seed").copied().unwrap_or(42),
+            };
+
+            if benchmark {
+                info!("Running C engine benchmark...");
+            }
+            
+            qwen3_inference_c::run_inference_c(config).map_err(|e| anyhow::anyhow!("C inference failed: {e}"))?;
+        }
+        _ => anyhow::bail!("Unsupported engine: {}. Use 'rust' or 'c'", engine),
+    }
 
     Ok(())
 }
