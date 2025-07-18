@@ -16,6 +16,7 @@ pub struct ModelConfig {
     pub max_seq_len: u32,
     pub head_dim: u32,
     pub norm_eps: f32,
+    pub rope_theta: f32,
     pub bos_token_id: u32,
     pub eos_token_id: u32,
 }
@@ -70,6 +71,7 @@ pub fn load_hf_config(model_path: &str) -> Result<ModelConfig> {
         max_seq_len: get_required_i64("max_position_embeddings")? as u32,
         head_dim,
         norm_eps: get_required_f64("rms_norm_eps")? as f32,
+        rope_theta: get_optional_u64("rope_theta", 10000) as f32,
         bos_token_id: get_optional_u64("bos_token_id", 0) as u32,
         eos_token_id: get_optional_u64("eos_token_id", 0) as u32,
     };

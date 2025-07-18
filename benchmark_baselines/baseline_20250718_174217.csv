@@ -1,0 +1,7 @@
+Type,Size,GFLOPS,Time_us,CPU_Feature
+matrix,32,0,0,Intel(R) Core(TM) i9-14900HX
+matrix,64,0,0,Intel(R) Core(TM) i9-14900HX
+matrix,128,0,0,Intel(R) Core(TM) i9-14900HX
+matrix,256,0,0,Intel(R) Core(TM) i9-14900HX
+matrix,512,0,0,Intel(R) Core(TM) i9-14900HX
+attention,512,0,0,Intel(R) Core(TM) i9-14900HX

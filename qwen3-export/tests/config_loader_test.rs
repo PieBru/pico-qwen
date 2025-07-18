@@ -18,7 +18,8 @@ fn create_test_config_json(temp_dir: &TempDir) -> Result<()> {
         "rms_norm_eps": 1e-6,
         "head_dim": 32,
         "bos_token_id": 1,
-        "eos_token_id": 2
+        "eos_token_id": 2,
+        "rope_theta": 10000.0
     }"#;
 
     let config_path = temp_dir.path().join("config.json");
@@ -118,7 +119,8 @@ fn test_load_hf_config_with_defaults() -> Result<()> {
         "num_key_value_heads": 8,
         "vocab_size": 1000,
         "max_position_embeddings": 512,
-        "rms_norm_eps": 1e-6
+        "rms_norm_eps": 1e-6,
+        "rope_theta": 10000.0
     }"#;
 
     let config_path = temp_dir.path().join("config.json");
@@ -146,6 +148,7 @@ fn test_config_serialization() -> Result<()> {
         max_seq_len: 256,
         head_dim: 32,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 1,
         eos_token_id: 2,
     };

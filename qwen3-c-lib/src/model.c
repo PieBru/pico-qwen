@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <errno.h>
 
-// Model file format constants
+// Model file format constants - Qwen3 format with metadata
 #define QWEN3_MAGIC 0x5157454E  // "QWEN" in little-endian
 #define QWEN3_VERSION 1
 #define MAX_MODEL_SIZE (1024LL * 1024LL * 1024LL * 10LL)  // 10GB max
@@ -177,44 +177,11 @@ static bool load_model_config(FILE* file, Qwen3ModelConfig* config) {
     if (!read_uint32(file, &config->max_seq_len)) return false;
     if (!read_float(file, &config->rope_theta)) return false;
     
-    // Calculate derived fields (head_dim is not in the public config)
-    
     return validate_model_config(config);
 }
 
 static bool load_quantized_tensor(FILE* file, Qwen3QuantizedTensor* tensor, 
-                                  Qwen3MemoryArena* arena) {
-    uint32_t ndims;
-    if (!read_uint32(file, &ndims)) {
-        printf("Failed to read ndims\n");
-        return false;
-    }
-    
-    if (ndims > 4) {
-        set_error("Tensor dimensions %u exceeds maximum 4", ndims);
-        return false;
-    }
-    
-    uint32_t dims[4];
-    for (uint32_t i = 0; i < ndims; i++) {
-        if (!read_uint32(file, &dims[i])) {
-            printf("Failed to read dim[%u]\n", i);
-            return false;
-        }
-    }
-    
-    uint32_t group_size;
-    if (!read_uint32(file, &group_size)) {
-        printf("Failed to read group_size\n");
-        return false;
-    }
-    
-    uint64_t num_elements = 1;
-    for (uint32_t i = 0; i < ndims; i++) {
-        num_elements *= dims[i];
-    }
-    
-    
+                                  Qwen3MemoryArena* arena, uint32_t num_elements, uint32_t group_size) {
     uint64_t num_groups = (num_elements + group_size - 1) / group_size;
     
     // Allocate quantized data
@@ -242,12 +209,8 @@ static bool load_quantized_tensor(FILE* file, Qwen3QuantizedTensor* tensor,
     // Initialize tensor
     tensor->data = quantized_data;
     tensor->scales = scales;
-    tensor->zero_points = NULL;  // Not used in this implementation
+    tensor->zero_points = NULL;
     tensor->group_size = group_size;
-    for (uint32_t i = 0; i < ndims; i++) {
-        tensor->shape.dims[i] = dims[i];
-    }
-    tensor->shape.ndims = ndims;
     tensor->pool = arena;
     
     return true;
@@ -333,6 +296,10 @@ Qwen3Model* qwen3_model_load_internal(const char* checkpoint_path, uint32_t ctx_
         model->config.max_seq_len = ctx_length;
     }
     
+    // Calculate derived values
+    uint32_t head_dim = model->config.dim / model->config.n_heads;
+    uint32_t group_size = 64;  // Default from Rust export
+    
     // Allocate arrays for layer weights
     size_t layer_weights_size = model->config.n_layers * sizeof(Qwen3QuantizedTensor);
     model->attn_norm = qwen3_memory_arena_alloc(model->weights_arena, layer_weights_size, QWEN3_MEMORY_ALIGNMENT);
@@ -351,64 +318,81 @@ Qwen3Model* qwen3_model_load_internal(const char* checkpoint_path, uint32_t ctx_
         goto cleanup;
     }
 
-    // Load token embedding
-    if (!load_quantized_tensor(file, &model->token_embedding, model->weights_arena)) {
-        set_error("Failed to load token embedding table");
+    // Load normalization weights (fp32) - skip for now as they are part of transformer layer
+    size_t norm_weights_size = model->config.n_layers * model->config.dim * sizeof(float);
+    if (fseek(file, norm_weights_size * 2, SEEK_CUR) != 0) {  // attn_norm + ffn_norm
+        set_error("Failed to skip norm weights");
         goto cleanup;
     }
     
-    // Load layer weights
+    size_t qk_norm_size = model->config.n_layers * 2 * head_dim * sizeof(float);  // q_norm + k_norm
+    if (fseek(file, qk_norm_size, SEEK_CUR) != 0) {
+        set_error("Failed to skip qk norm weights");
+        goto cleanup;
+    }
+    
+    size_t final_norm_size = model->config.dim * sizeof(float);
+    if (fseek(file, final_norm_size, SEEK_CUR) != 0) {
+        set_error("Failed to skip final norm weights");
+        goto cleanup;
+    }
+    
+    // Load quantized weights
     for (uint32_t i = 0; i < model->config.n_layers; i++) {
-        if (!load_quantized_tensor(file, &model->attn_norm[i], model->weights_arena)) {
-            set_error("Failed to load attention norm weights for layer %u", i);
-            goto cleanup;
-        }
-        if (!load_quantized_tensor(file, &model->ffn_norm[i], model->weights_arena)) {
-            set_error("Failed to load FFN norm weights for layer %u", i);
-            goto cleanup;
-        }
-        if (!load_quantized_tensor(file, &model->wq[i], model->weights_arena)) {
+        // WQ: [dim, dim]
+        if (!load_quantized_tensor(file, &model->wq[i], model->weights_arena, 
+                                 model->config.dim * model->config.dim, group_size)) {
             set_error("Failed to load WQ weights for layer %u", i);
             goto cleanup;
         }
-        if (!load_quantized_tensor(file, &model->wk[i], model->weights_arena)) {
+        
+        // WK: [dim, model->config.n_kv_heads * head_dim]
+        if (!load_quantized_tensor(file, &model->wk[i], model->weights_arena, 
+                                 model->config.dim * (model->config.n_kv_heads * head_dim), group_size)) {
             set_error("Failed to load WK weights for layer %u", i);
             goto cleanup;
         }
-        if (!load_quantized_tensor(file, &model->wv[i], model->weights_arena)) {
+        
+        // WV: [dim, model->config.n_kv_heads * head_dim]
+        if (!load_quantized_tensor(file, &model->wv[i], model->weights_arena, 
+                                 model->config.dim * (model->config.n_kv_heads * head_dim), group_size)) {
             set_error("Failed to load WV weights for layer %u", i);
             goto cleanup;
         }
-        if (!load_quantized_tensor(file, &model->wo[i], model->weights_arena)) {
+        
+        // WO: [dim, dim]
+        if (!load_quantized_tensor(file, &model->wo[i], model->weights_arena, 
+                                 model->config.dim * model->config.dim, group_size)) {
             set_error("Failed to load WO weights for layer %u", i);
             goto cleanup;
         }
-        if (!load_quantized_tensor(file, &model->w1[i], model->weights_arena)) {
+        
+        // W1: [hidden_dim, dim]
+        if (!load_quantized_tensor(file, &model->w1[i], model->weights_arena, 
+                                 model->config.hidden_dim * model->config.dim, group_size)) {
             set_error("Failed to load W1 weights for layer %u", i);
             goto cleanup;
         }
-        if (!load_quantized_tensor(file, &model->w2[i], model->weights_arena)) {
+        
+        // W2: [dim, hidden_dim]
+        if (!load_quantized_tensor(file, &model->w2[i], model->weights_arena, 
+                                 model->config.dim * model->config.hidden_dim, group_size)) {
             set_error("Failed to load W2 weights for layer %u", i);
             goto cleanup;
         }
-        if (!load_quantized_tensor(file, &model->w3[i], model->weights_arena)) {
+        
+        // W3: [hidden_dim, dim]
+        if (!load_quantized_tensor(file, &model->w3[i], model->weights_arena, 
+                                 model->config.hidden_dim * model->config.dim, group_size)) {
             set_error("Failed to load W3 weights for layer %u", i);
             goto cleanup;
         }
     }
     
-    // Load final norm weight
-    model->final_norm = qwen3_memory_arena_alloc(model->weights_arena, sizeof(Qwen3Tensor), QWEN3_MEMORY_ALIGNMENT);
-    if (!model->final_norm) {
-        set_error("Failed to allocate final norm tensor");
-        goto cleanup;
-    }
-    // Note: final_norm should be a simple tensor, not quantized
-    // For now, we'll skip this as the format needs to be defined
-    
-    // Load tokenizer
-    if (!load_tokenizer(file, model)) {
-        set_error("Failed to load tokenizer");
+    // Load token embedding
+    if (!load_quantized_tensor(file, &model->token_embedding, model->weights_arena, 
+                             model->config.vocab_size * model->config.dim, group_size)) {
+        set_error("Failed to load token embedding table");
         goto cleanup;
     }
     

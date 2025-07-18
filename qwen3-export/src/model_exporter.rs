@@ -37,8 +37,8 @@ pub struct BinaryModelExporter {
 }
 
 impl BinaryModelExporter {
-    const MAGIC_NUMBER: u32 = 0x616A6331; // "ajc1" in ASCII
-    const VERSION: i32 = 1;
+    const MAGIC_NUMBER: u32 = 0x5157454E; // "QWEN" in little-endian (C engine compatible)
+    const VERSION: u32 = 1;
     const HEADER_SIZE: usize = 256;
     const MIN_GROUP_SIZE: usize = 4;
 
@@ -201,26 +201,24 @@ impl BinaryModelExporter {
 
     /// Write binary header
     fn write_header<W: Write>(&self, writer: &mut W, header_info: &HeaderInfo) -> Result<()> {
-        // Magic number "ajc1" in ASCII
+        // Magic number "QWEN" in little-endian (C engine compatible)
         writer.write_u32::<LittleEndian>(Self::MAGIC_NUMBER)?;
 
         // Version
-        writer.write_i32::<LittleEndian>(Self::VERSION)?;
+        writer.write_u32::<LittleEndian>(Self::VERSION)?;
 
-        // Model parameters (10 int32 values)
+        // Model parameters in C engine format order
+        writer.write_u32::<LittleEndian>(self.config.vocab_size)?;
         writer.write_u32::<LittleEndian>(self.config.dim)?;
         writer.write_u32::<LittleEndian>(self.config.hidden_dim)?;
         writer.write_u32::<LittleEndian>(self.config.n_layers)?;
         writer.write_u32::<LittleEndian>(self.config.n_heads)?;
         writer.write_u32::<LittleEndian>(self.config.n_kv_heads)?;
-        writer.write_u32::<LittleEndian>(self.config.vocab_size)?;
         writer.write_u32::<LittleEndian>(self.config.max_seq_len)?;
-        writer.write_u32::<LittleEndian>(self.config.head_dim)?;
-        writer.write_u32::<LittleEndian>(header_info.shared_classifier as u32)?;
-        writer.write_u32::<LittleEndian>(self.group_size as u32)?;
+        writer.write_f32::<LittleEndian>(self.config.rope_theta)?;
 
-        // Pad to header size
-        let current_pos = 4 + 4 + 10 * 4; // magic + version + 10 params
+        // Pad to header size (C engine expects 8 parameters + rope_theta)
+        let current_pos = 4 + 4 + 8 * 4; // magic + version + 8 params
         let padding = Self::HEADER_SIZE - current_pos;
         let zeros = vec![0u8; padding];
         writer.write_all(&zeros)?;
@@ -236,7 +234,7 @@ impl BinaryModelExporter {
     ) -> Result<()> {
         info!("Writing normalization weights...");
 
-        // Attention norms
+        // Attention norms (per layer)
         for layer_idx in 0..self.config.n_layers {
             let attn_norm_key = format!("model.layers.{layer_idx}.input_layernorm.weight");
             if let Some(attn_norm) = tensor_reader.load_tensor(&attn_norm_key)? {
@@ -248,7 +246,7 @@ impl BinaryModelExporter {
             }
         }
 
-        // FFN norms
+        // FFN norms (per layer)
         for layer_idx in 0..self.config.n_layers {
             let ffn_norm_key = format!("model.layers.{layer_idx}.post_attention_layernorm.weight");
             if let Some(ffn_norm) = tensor_reader.load_tensor(&ffn_norm_key)? {
@@ -260,16 +258,7 @@ impl BinaryModelExporter {
             }
         }
 
-        // Final norm
-        if let Some(final_norm) = tensor_reader.load_tensor(Self::FINAL_NORM_KEY)? {
-            for &value in &final_norm {
-                writer.write_f32::<LittleEndian>(value)?;
-            }
-        } else {
-            return Err(anyhow::anyhow!("Missing final norm"));
-        }
-
-        // QK LayerNorm weights (Qwen3 specific)
+        // QK LayerNorm weights (Qwen3 specific) - q_norm
         for layer_idx in 0..self.config.n_layers {
             let lq_key = format!("model.layers.{layer_idx}.self_attn.q_norm.weight");
             if let Some(lq) = tensor_reader.load_tensor(&lq_key)? {
@@ -284,6 +273,7 @@ impl BinaryModelExporter {
             }
         }
 
+        // QK LayerNorm weights - k_norm
         for layer_idx in 0..self.config.n_layers {
             let lk_key = format!("model.layers.{layer_idx}.self_attn.k_norm.weight");
             if let Some(lk) = tensor_reader.load_tensor(&lk_key)? {
@@ -298,6 +288,15 @@ impl BinaryModelExporter {
             }
         }
 
+        // Final norm
+        if let Some(final_norm) = tensor_reader.load_tensor(Self::FINAL_NORM_KEY)? {
+            for &value in &final_norm {
+                writer.write_f32::<LittleEndian>(value)?;
+            }
+        } else {
+            return Err(anyhow::anyhow!("Missing final norm"));
+        }
+
         Ok(())
     }
 
@@ -308,24 +307,29 @@ impl BinaryModelExporter {
         tensor_reader: &mut TensorReader,
         shared_classifier: bool,
     ) -> Result<()> {
-        // Build weight tensor list to match Python ordering EXACTLY
-        // Python: embed_tokens, [all q_proj], [all k_proj], [all v_proj], [all o_proj], [all gate_proj], [all down_proj], [all up_proj], [lm_head if not shared]
-        let estimated_capacity = 1  // embed_tokens
-            + (self.config.n_layers as usize * Self::LAYER_WEIGHT_PATTERNS.len())  // layer weights
-            + usize::from(!shared_classifier); // classifier if not shared
-        let mut weight_tensors = Vec::with_capacity(estimated_capacity);
+        // Build weight tensor list to match C engine ordering EXACTLY
+        let mut weight_tensors = Vec::new();
 
-        // First: embedding tokens
-        weight_tensors.push(Self::EMBED_TOKENS_KEY.to_string());
+        // C engine expects weights in layer-wise order:
+        // For each layer: WQ, WK, WV, WO, W1, W2, W3
+        // Then: token_embedding
+        // Then: classifier (if not shared)
 
-        // Then: group by tensor type across all layers (matching Python exactly)
-        for &tensor_type in Self::LAYER_WEIGHT_PATTERNS {
-            for layer_idx in 0..self.config.n_layers {
-                weight_tensors.push(format!("model.layers.{layer_idx}.{tensor_type}"));
-            }
+        // Layer weights - in C engine order
+        for layer_idx in 0..self.config.n_layers {
+            weight_tensors.push(format!("model.layers.{layer_idx}.self_attn.q_proj.weight")); // WQ
+            weight_tensors.push(format!("model.layers.{layer_idx}.self_attn.k_proj.weight")); // WK
+            weight_tensors.push(format!("model.layers.{layer_idx}.self_attn.v_proj.weight")); // WV
+            weight_tensors.push(format!("model.layers.{layer_idx}.self_attn.o_proj.weight")); // WO
+            weight_tensors.push(format!("model.layers.{layer_idx}.mlp.gate_proj.weight"));   // W1
+            weight_tensors.push(format!("model.layers.{layer_idx}.mlp.down_proj.weight"));  // W2
+            weight_tensors.push(format!("model.layers.{layer_idx}.mlp.up_proj.weight"));    // W3
         }
 
-        // Finally: classifier if not shared (matching Python logic)
+        // Token embedding
+        weight_tensors.push(Self::EMBED_TOKENS_KEY.to_string());
+
+        // Classifier if not shared
         if !shared_classifier {
             weight_tensors.push(Self::LM_HEAD_KEY.to_string());
         }

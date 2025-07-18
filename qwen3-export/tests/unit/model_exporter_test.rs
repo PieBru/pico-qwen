@@ -33,6 +33,7 @@ fn test_quantize_q80_known_values() {
         max_seq_len: 128,
         head_dim: 2,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };
@@ -67,6 +68,7 @@ fn test_quantize_q80_zero_weights() {
         max_seq_len: 128,
         head_dim: 2,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };
@@ -99,6 +101,7 @@ fn test_quantize_q80_invalid_group_size() {
         max_seq_len: 128,
         head_dim: 2,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };
@@ -153,7 +156,7 @@ fn test_find_optimal_group_size() {
 
 #[test]
 fn test_header_constants() {
-    assert_eq!(BinaryModelExporter::MAGIC_NUMBER, 0x616A6331);
+    assert_eq!(BinaryModelExporter::MAGIC_NUMBER, 0x5157454E); // QWEN magic for C compatibility
     assert_eq!(BinaryModelExporter::VERSION, 1);
     assert_eq!(BinaryModelExporter::HEADER_SIZE, 256);
     assert_eq!(BinaryModelExporter::MIN_GROUP_SIZE, 4);
@@ -171,6 +174,7 @@ fn test_quantization_symmetry() {
         max_seq_len: 128,
         head_dim: 2,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };
@@ -202,6 +206,7 @@ fn test_minimum_group_size_enforcement() {
         max_seq_len: 128,
         head_dim: 2,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };

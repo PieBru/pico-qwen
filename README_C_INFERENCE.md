@@ -65,7 +65,7 @@ cd qwen3-c-lib/build
 ctest -V
 
 # Performance benchmarks
-cargo run --release -- inference model.bin --engine c --benchmark
+cargo run --release -p qwen3-cli -- inference ~/HuggingFace/Qwen3-0.6B.bin --engine c --benchmark
 ```
 
 ## Architecture

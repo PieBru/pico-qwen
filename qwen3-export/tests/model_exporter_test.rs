@@ -17,6 +17,7 @@ fn create_test_config() -> ModelConfig {
         max_seq_len: 128,
         head_dim: 4,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     }
@@ -129,6 +130,7 @@ fn test_invalid_configurations() {
         max_seq_len: 128,
         head_dim: 4,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };
@@ -185,6 +187,7 @@ fn test_group_size_adjustment() {
         max_seq_len: 128,
         head_dim: 4,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };
@@ -323,6 +326,7 @@ fn test_comprehensive_group_size_optimization() {
             max_seq_len: 128,
             head_dim: 4,
             norm_eps: 1e-5,
+            rope_theta: 10000.0,
             bos_token_id: 0,
             eos_token_id: 1,
         };
@@ -457,6 +461,7 @@ fn test_minimum_group_size_enforcement() {
         max_seq_len: 128,
         head_dim: 4,
         norm_eps: 1e-5,
+        rope_theta: 10000.0,
         bos_token_id: 0,
         eos_token_id: 1,
     };
