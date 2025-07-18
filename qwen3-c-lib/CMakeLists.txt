@@ -26,10 +26,17 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mfpu=neon")
 endif()
 
-# SIMD optimizations
+# SIMD optimizations - detect actual CPU features
 if(ARCH_X86_64)
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mavx2 -mfma")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mavx512f -mavx512vl -mavx512vnni")
+    # Check for AVX-512 support
+    execute_process(
+        COMMAND grep -q "avx512" /proc/cpuinfo
+        RESULT_VARIABLE HAS_AVX512
+    )
+    if(HAS_AVX512 EQUAL 0)
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mavx512f -mavx512vl")
+    endif()
 elseif(ARCH_ARM64 OR ARCH_ARM)
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mfpu=neon")
 endif()
@@ -59,9 +66,6 @@ set(SOURCES
     src/memory.c
     src/utils.c
     src/simd/cpu_detect.c
-    src/simd/avx2_kernels.c
-    src/simd/avx512_kernels.c
-    src/simd/neon_kernels.c
 )
 
 # Create static library
@@ -115,21 +119,26 @@ install(FILES include/qwen3_inference.h
 # Testing
 enable_testing()
 
-# Test executable
-add_executable(test_qwen3_c
-    tests/test_all.c
-    tests/test_memory.c
-    tests/test_tensor.c
-    tests/test_matmul.c
-    tests/test_attention.c
-    tests/test_inference.c
-)
+# Test executables
+add_executable(test_matrix tests/test_matrix.c)
+add_executable(test_attention tests/test_attention.c)
+add_executable(test_model_loading tests/test_model_loading.c)
+add_executable(test_transformer tests/test_transformer.c)
+add_executable(test_inference tests/test_inference.c)
 
-# Link test executable
-target_link_libraries(test_qwen3_c qwen3_inference)
+# Link test executables
+target_link_libraries(test_matrix qwen3_inference)
+target_link_libraries(test_attention qwen3_inference)
+target_link_libraries(test_model_loading qwen3_inference)
+target_link_libraries(test_transformer qwen3_inference)
+target_link_libraries(test_inference qwen3_inference)
 
 # Add tests
-add_test(NAME test_qwen3_c COMMAND test_qwen3_c)
+add_test(NAME test_matrix COMMAND test_matrix)
+add_test(NAME test_attention COMMAND test_attention)
+add_test(NAME test_model_loading COMMAND test_model_loading)
+add_test(NAME test_transformer COMMAND test_transformer)
+add_test(NAME test_inference COMMAND test_inference)
 
 # Benchmark executable
 add_executable(benchmark_qwen3_c
@@ -141,7 +150,7 @@ target_link_libraries(benchmark_qwen3_c qwen3_inference)
 # Custom targets
 add_custom_target(tests
     COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-    DEPENDS test_qwen3_c
+    DEPENDS test_matrix test_attention test_model_loading test_transformer test_inference
 )
 
 add_custom_target(benchmark

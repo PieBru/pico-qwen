@@ -50,12 +50,29 @@ typedef struct {
 typedef struct Qwen3Model Qwen3Model;
 
 /**
+ * @brief Extended model loading options
+ */
+typedef struct {
+    const char* checkpoint_path;  /**< Path to the .bin model file */
+    uint32_t context_length;      /**< Context window length (0 for model default) */
+    bool validate_weights;        /**< Validate model weights on load */
+    bool use_memory_pool;         /**< Use memory pool for allocations */
+} Qwen3LoadOptions;
+
+/**
  * @brief Load a model from checkpoint
  * @param checkpoint_path Path to the .bin model file
  * @param ctx_length Context window length (0 for model default)
  * @return Model handle or NULL on error
  */
 Qwen3Model* qwen3_model_load(const char* checkpoint_path, uint32_t ctx_length);
+
+/**
+ * @brief Load a model with extended options
+ * @param options Extended loading options
+ * @return Model handle or NULL on error
+ */
+Qwen3Model* qwen3_model_load_ex(const Qwen3LoadOptions* options);
 
 /**
  * @brief Free a loaded model
