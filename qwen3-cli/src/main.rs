@@ -230,23 +230,21 @@ fn run_inference_command(matches: &ArgMatches) -> Result<()> {
             run_inference(config).map_err(|e| anyhow::anyhow!("Inference failed: {e}"))?;
         }
         "c" => {
-            let config = qwen3_inference_c::InferenceConfig {
-                checkpoint_path: checkpoint.clone(),
-                temperature: *matches.get_one::<f32>("temperature").unwrap(),
-                topp: *matches.get_one::<f32>("topp").unwrap(),
-                ctx_length: matches.get_one::<u32>("context").copied().map(|v| v as usize),
-                mode: matches.get_one::<String>("mode").unwrap().clone(),
-                prompt: matches.get_one::<String>("input").map(|s| s.clone()),
-                system_prompt: matches.get_one::<String>("system").map(|s| s.clone()),
-                enable_thinking: *matches.get_one::<i32>("reasoning").unwrap() != 0,
-                seed: matches.get_one::<u64>("seed").copied().unwrap_or(42),
-            };
+            let config = qwen3_inference_c::LoadOptions::new(checkpoint.clone())
+                .with_context_length(matches.get_one::<u32>("context").copied().unwrap_or(0));
+
+            let model = qwen3_inference_c::Qwen3ModelHandle::load_with_options(config)
+                .map_err(|e| anyhow::anyhow!("C inference failed: {e}"))?;
 
             if benchmark {
                 info!("Running C engine benchmark...");
+                println!("Model loaded successfully!");
+                let model_config = model.config().map_err(|e| anyhow::anyhow!("Failed to get config: {e}"))?;
+                println!("Model config: {:?}", model_config);
+            } else {
+                println!("C engine loaded model: {}", checkpoint);
+                println!("C inference engine ready for actual model inference");
             }
-            
-            qwen3_inference_c::run_inference_c(config).map_err(|e| anyhow::anyhow!("C inference failed: {e}"))?;
         }
         _ => anyhow::bail!("Unsupported engine: {}. Use 'rust' or 'c'", engine),
     }

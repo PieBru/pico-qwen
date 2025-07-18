@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,8 +33,10 @@ typedef enum {
     QWEN3_CPU_FEATURE_AVX512VL = 1 << 9,
     QWEN3_CPU_FEATURE_AVX512BW = 1 << 10,
     QWEN3_CPU_FEATURE_AVX512DQ = 1 << 11,
-    QWEN3_CPU_FEATURE_NEON     = 1 << 12,
-    QWEN3_CPU_FEATURE_SVE      = 1 << 13,
+    QWEN3_CPU_FEATURE_BMI1     = 1 << 12,
+    QWEN3_CPU_FEATURE_BMI2     = 1 << 13,
+    QWEN3_CPU_FEATURE_NEON     = 1 << 14,
+    QWEN3_CPU_FEATURE_SVE      = 1 << 15,
 } Qwen3CPUFeature;
 
 /**
