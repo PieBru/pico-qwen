@@ -107,6 +107,123 @@ cargo audit
 cargo outdated
 ```
 
+## Cleanup Script: make_clean.sh
+
+The `scripts/make_clean.sh` script provides comprehensive cleanup of build artifacts and temporary files across the entire workspace.
+
+### Features
+
+- **Multi-language support**: Cleans Rust, C/C++, and Python artifacts
+- **Comprehensive patterns**: Removes all common build artifacts
+- **Safety checks**: Dry-run mode and confirmation prompts
+- **Size reporting**: Shows space that will be freed
+- **Cross-platform**: Works on Linux, macOS, and Windows (via WSL)
+
+### Usage
+
+```bash
+# Basic usage (interactive)
+./scripts/make_clean.sh
+
+# Common options
+./scripts/make_clean.sh -v        # Verbose output
+./scripts/make_clean.sh -f        # Force without prompts
+./scripts/make_clean.sh -d        # Dry run - show what would be removed
+./scripts/make_clean.sh -h        # Show help
+
+# Combined options
+./scripts/make_clean.sh -v -d     # Verbose dry run
+./scripts/make_clean.sh -f -v     # Force with verbose output
+```
+
+### What Gets Cleaned
+
+#### Rust Artifacts (Preserving Cargo.lock)
+- `target/` directories
+- Debug symbols and profiling data
+- Binary artifacts (preserving Cargo.lock for reproducible builds)
+
+#### C/C++ Artifacts (Preserving Makefiles)
+- Object files: `*.o`, `*.obj`
+- Static libraries: `*.a`, `*.lib`
+- Shared libraries: `*.so`, `*.dylib`, `*.dll`
+- Executables: `*.exe`, `a.out`
+- CMake build artifacts: `CMakeCache.txt`, `CMakeFiles/`
+- Build directories: `build/`, `debug/`, `release/`
+- **Preserved**: Makefiles, CMakeLists.txt, source files, test files
+
+#### Python Artifacts
+- Bytecode: `__pycache__/`, `*.pyc`, `*.pyo`
+- Build artifacts: `build/`, `dist/`, `*.egg-info/`
+- Caches: `.pytest_cache/`, `.mypy_cache/`
+
+#### System Files
+- Temporary files: `*.tmp`, `*.temp`, `*.log`
+- Backup files: `*.bak`, `*~`, `.#*`
+- IDE files: `.vscode/`, `.idea/`, `*.user`
+- macOS files: `.DS_Store`, `Thumbs.db`
+- Coverage files: `*.gcda`, `*.gcno`, `*.profraw`
+
+### Examples
+
+#### Interactive Cleanup
+```bash
+$ ./scripts/make_clean.sh
+Found 42 items to clean
+This will remove all build artifacts and temporary files.
+Continue? [y/N]: y
+Cleaning artifacts...
+[REMOVE] directory: ./target
+[REMOVE] file: ./qwen3-c-lib/build/libqwen3_inference.so
+Cleanup completed!
+```
+
+#### Dry Run
+```bash
+$ ./scripts/make_clean.sh -d
+[DRY-RUN] Would remove: ./target (45M)
+[DRY-RUN] Would remove: ./qwen3-c-lib/build (12M)
+[DRY-RUN] Would remove: ./__pycache__ (2.3M)
+Dry run completed - no files were actually removed.
+```
+
+### Integration with Git
+
+Add to your `.gitignore`:
+```gitignore
+# Build artifacts
+/target/
+/build/
+/debug/
+/release/
+*.o
+*.a
+*.so
+
+# IDE files
+.vscode/
+.idea/
+*.user
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+```
+
+### Pre-commit Hook
+
+Create `.git/hooks/pre-commit`:
+```bash
+#!/bin/bash
+# Run cleanup before commit
+./scripts/make_clean.sh -f
+```
+
 ## Architecture Details
 
 ### Core Components
