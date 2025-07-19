@@ -49,6 +49,7 @@ pub struct InferenceConfig {
     pub system_prompt: Option<String>,
     pub enable_thinking: bool,
     pub seed: u64,
+    pub max_tokens: usize,
 }
 
 impl InferenceConfig {
@@ -68,6 +69,7 @@ pub struct InferenceConfigBuilder {
     system_prompt: Option<String>,
     enable_thinking: Option<bool>,
     seed: Option<u64>,
+    max_tokens: Option<usize>,
 }
 
 impl InferenceConfigBuilder {
@@ -107,6 +109,10 @@ impl InferenceConfigBuilder {
         self.seed = seed;
         self
     }
+    pub fn max_tokens(mut self, max_tokens: Option<usize>) -> Self {
+        self.max_tokens = max_tokens;
+        self
+    }
     pub fn build(self) -> Result<InferenceConfig, String> {
         Ok(InferenceConfig {
             checkpoint_path: self.checkpoint_path.ok_or("checkpoint_path is required")?,
@@ -123,6 +129,7 @@ impl InferenceConfigBuilder {
                     .unwrap()
                     .as_secs()
             }),
+            max_tokens: self.max_tokens.unwrap_or(50),
         })
     }
 }
@@ -159,7 +166,13 @@ pub fn run_inference(inference_config: InferenceConfig) -> Result<()> {
 
     // Run
     match inference_config.mode.as_str() {
-        "generate" => generate(&mut transformer, &tokenizer, &mut sampler, prompt),
+        "generate" => generate(
+            &mut transformer,
+            &tokenizer,
+            &mut sampler,
+            prompt,
+            Some(inference_config.max_tokens),
+        ),
         "chat" => chat(
             &mut transformer,
             &tokenizer,

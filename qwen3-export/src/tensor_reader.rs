@@ -133,8 +133,26 @@ impl TensorReader {
                 };
                 // BF16 to F32: BF16 is the upper 16 bits of F32
                 let bf16_bits = u16::from_le_bytes([*low, *high]);
-                let f32_bits = (bf16_bits as u32) << 16;
-                f32::from_bits(f32_bits)
+                
+                // Handle special values (NaN, infinity)
+                let mantissa = bf16_bits & 0x03FF;  // 10-bit mantissa
+                let exponent = (bf16_bits >> 10) & 0x1F;  // 5-bit exponent
+                let sign = (bf16_bits >> 15) & 0x1;  // 1-bit sign
+                
+                // Handle special cases
+                if exponent == 0x1F {  // Special value (NaN/Inf)
+                    if mantissa == 0 {
+                        // Infinity
+                        if sign != 0 { f32::NEG_INFINITY } else { f32::INFINITY }
+                    } else {
+                        // NaN
+                        f32::NAN
+                    }
+                } else {
+                    // Normal conversion
+                    let f32_bits = (bf16_bits as u32) << 16;
+                    f32::from_bits(f32_bits)
+                }
             })
             .collect()
     }

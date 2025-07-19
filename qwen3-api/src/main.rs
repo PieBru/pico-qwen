@@ -18,6 +18,10 @@ struct Args {
     /// List available models and exit
     #[arg(long)]
     list_models: bool,
+
+    /// Directory to search for models (overrides config)
+    #[arg(short, long)]
+    models: Option<String>,
 }
 
 #[tokio::main]
@@ -30,12 +34,16 @@ async fn main() -> Result<()> {
 
         use std::path::Path;
 
-        println!("Available models in {}", config.models.directory);
+        let models_dir = args.models
+            .as_ref()
+            .map(|s| Path::new(s))
+            .unwrap_or_else(|| Path::new(&config.models.directory));
+
+        println!("Available models in {}", models_dir.display());
         println!("┌─────────────────────────────────────────┬────────────────┬────────────┐");
         println!("│ Model Name                              │ Size           │ Format     │");
         println!("├─────────────────────────────────────────┼────────────────┼────────────┤");
 
-        let models_dir = Path::new(&config.models.directory);
         let mut found_models = false;
 
         if let Ok(entries) = std::fs::read_dir(models_dir) {

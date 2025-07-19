@@ -115,6 +115,15 @@ fn inference_subcommand() -> Command {
                 .action(clap::ArgAction::SetTrue)
                 .help("Enable benchmark mode (shows performance metrics)"),
         )
+        .arg(
+            Arg::new("max-tokens")
+                .short('n')
+                .long("max-tokens")
+                .value_name("INT")
+                .help("Maximum number of tokens to generate [default: 50]")
+                .default_value("50")
+                .value_parser(clap::value_parser!(usize)),
+        )
 }
 
 /// Define the models subcommand.
@@ -124,10 +133,12 @@ fn models_subcommand() -> Command {
         .arg(
             Arg::new("directory")
                 .short('d')
+                .short('m')
                 .long("directory")
+                .long("models")
                 .value_name("PATH")
                 .help("Directory to search for .bin model files")
-                .default_value("~/HuggingFace"),
+                .default_value("./models"),
         )
         .arg(
             Arg::new("format")
@@ -210,6 +221,7 @@ fn run_inference_command(matches: &ArgMatches) -> Result<()> {
     match engine.as_str() {
         "rust" => {
             let checkpoint_str = matches.get_one::<String>("checkpoint").unwrap();
+            let max_tokens = matches.get_one::<usize>("max-tokens").copied().unwrap_or(50);
             let config = InferenceConfigBuilder::default()
                 .checkpoint_path(Some(checkpoint_str))
                 .temperature(Some(*matches.get_one::<f32>("temperature").unwrap()))
@@ -220,6 +232,7 @@ fn run_inference_command(matches: &ArgMatches) -> Result<()> {
                 .system_prompt(matches.get_one::<String>("system"))
                 .enable_thinking(Some(*matches.get_one::<i32>("reasoning").unwrap() != 0))
                 .seed(Some(matches.get_one::<u64>("seed").copied().unwrap_or(42)))
+                .max_tokens(Some(max_tokens))
                 .build()
                 .map_err(|e| anyhow::anyhow!(e))?;
 

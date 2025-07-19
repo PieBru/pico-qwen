@@ -16,27 +16,26 @@ cargo run --release -p qwen3-cli -- inference $HOME/HuggingFace/Qwen3-0.6B-int8.
 
 ### CLI Options
 ```bash
-# Export models - specify full directory path and output filename
+# Export models from HuggingFace format to custom binary format
 # Directory must contain: config.json, tokenizer.json, *.safetensors files
-cargo run --release -p qwen3-cli -- export $HOME/Downloads/Qwen3-0.6B $HOME/HuggingFace/Qwen3-0.6B-int8 --group-size 64
+cargo run --release -p qwen3-cli -- export $HOME/Downloads/Qwen3-0.6B $HOME/HuggingFace/Qwen3-0.6B-int8.bin --group-size 64
+
+# Available options:
+# -g, --group-size <SIZE>: Quantization group size [default: 64]
+
+# Engine compatibility:
+# --engine c: Use C engine (supports models with max_seq_len up to 65536)
+# --engine rust: Use Rust engine
 
 # List available models - scans directory for .bin files
 cargo run --release -p qwen3-cli -- models --directory $HOME/HuggingFace
+
 # With options:
 cargo run --release -p qwen3-cli -- models --directory $HOME/HuggingFace --format json
 # Formats: table|json|list
 
 # Or use full path
 cargo run --release -p qwen3-cli -- models --directory /home/$USER/HuggingFace
-
-# Available options: (FIXME: needs more testing)
-# --group-size: Quantization group size (32, 64, 128, 256)
-# --quantization: Quantization level (int4, int8, fp16, fp32)
-# --temperature, -t: Sampling temperature (0.1-2.0)
-# --topp, -p: Top-p nucleus sampling (0.1-1.0)
-# --seed, -s: Random seed for reproducibility
-# --context, -c: Context window size
-# --reasoning, -r: Enable reasoning mode (0/1)
 ```
 
 ## API Server Usage

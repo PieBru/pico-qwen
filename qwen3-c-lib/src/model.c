@@ -95,23 +95,6 @@ static bool read_float(FILE* file, float* value) {
     return true;
 }
 
-static bool read_string(FILE* file, char* buffer, size_t max_len) {
-    uint32_t len;
-    if (!read_uint32(file, &len)) return false;
-    
-    if (len >= max_len) {
-        set_error("String length %u exceeds maximum %zu", len, max_len - 1);
-        return false;
-    }
-    
-    if (fread(buffer, 1, len, file) != len) {
-        set_error("Failed to read string from file: %s", strerror(errno));
-        return false;
-    }
-    
-    buffer[len] = '\0';
-    return true;
-}
 
 static bool validate_model_config(const Qwen3ModelConfig* config) {
     if (config->vocab_size == 0 || config->vocab_size > 1000000) {
@@ -145,7 +128,7 @@ static bool validate_model_config(const Qwen3ModelConfig* config) {
         return false;
     }
     
-    if (config->max_seq_len == 0 || config->max_seq_len > 32768) {
+    if (config->max_seq_len == 0 || config->max_seq_len > 65536) {
         set_error("Invalid max_seq_len: %u", config->max_seq_len);
         return false;
     }
@@ -216,36 +199,6 @@ static bool load_quantized_tensor(FILE* file, Qwen3QuantizedTensor* tensor,
     return true;
 }
 
-static bool load_tokenizer(FILE* file, Qwen3Model* model) {
-    char* vocab_buffer = qwen3_memory_arena_alloc(model->tokenizer_arena, 
-                                                  model->config.vocab_size * sizeof(char*), QWEN3_MEMORY_ALIGNMENT);
-    float* scores_buffer = qwen3_memory_arena_alloc(model->tokenizer_arena,
-                                                    model->config.vocab_size * sizeof(float), QWEN3_MEMORY_ALIGNMENT);
-    
-    if (!vocab_buffer || !scores_buffer) {
-        set_error("Failed to allocate tokenizer memory");
-        return false;
-    }
-    
-    model->vocab = (char**)vocab_buffer;
-    model->vocab_scores = scores_buffer;
-    
-    for (uint32_t i = 0; i < model->config.vocab_size; i++) {
-        char* token_str = qwen3_memory_arena_alloc(model->tokenizer_arena, 256, QWEN3_MEMORY_ALIGNMENT);
-        if (!token_str) {
-            set_error("Failed to allocate token string memory");
-            return false;
-        }
-        
-        if (!read_string(file, token_str, 256)) return false;
-        if (!read_float(file, &model->vocab_scores[i])) return false;
-        
-        model->vocab[i] = token_str;
-    }
-    
-    model->vocab_size = model->config.vocab_size;
-    return true;
-}
 
 Qwen3Model* qwen3_model_load_internal(const char* checkpoint_path, uint32_t ctx_length) {
     if (!checkpoint_path) {

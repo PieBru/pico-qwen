@@ -24,8 +24,9 @@ pub struct QuantizedWeight {
     pub max_error: f32,
 }
 
-/// Header information structure (lightweight)
+/// Header information structure (placeholder for future extensions)
 #[derive(Debug)]
+#[allow(dead_code)]
 struct HeaderInfo {
     pub shared_classifier: bool,
 }
@@ -40,6 +41,7 @@ impl BinaryModelExporter {
     const MAGIC_NUMBER: u32 = 0x5157454E; // "QWEN" in little-endian (C engine compatible)
     const VERSION: u32 = 1;
     const HEADER_SIZE: usize = 256;
+    const CONFIG_SIZE: usize = 36; // 8*u32 + 1*f32 = 32 + 4 = 36 bytes
     const MIN_GROUP_SIZE: usize = 4;
 
     // Tensor name constants
@@ -47,16 +49,7 @@ impl BinaryModelExporter {
     const LM_HEAD_KEY: &'static str = "lm_head.weight";
     const FINAL_NORM_KEY: &'static str = "model.norm.weight";
 
-    const LAYER_WEIGHT_PATTERNS: &'static [&'static str] = &[
-        "self_attn.q_proj.weight",
-        "self_attn.k_proj.weight",
-        "self_attn.v_proj.weight",
-        "self_attn.o_proj.weight",
-        "mlp.gate_proj.weight",
-        "mlp.down_proj.weight",
-        "mlp.up_proj.weight",
-    ];
-
+    
     /// Find optimal group size that divides hidden_dim and is reasonable
     fn find_optimal_group_size(hidden_dim: usize, requested_size: usize) -> usize {
         let mut size = requested_size.min(hidden_dim);
@@ -140,7 +133,7 @@ impl BinaryModelExporter {
         let num_groups = weights.len() / self.group_size;
 
         // Process groups in parallel
-        let group_results: Vec<_> = (0..num_groups)
+        let group_results: Result<Vec<_>> = (0..num_groups)
             .into_par_iter()
             .map(|group_idx| {
                 let start_idx = group_idx * self.group_size;
@@ -149,12 +142,17 @@ impl BinaryModelExporter {
 
                 // Find the maximum absolute value in this group
                 let group_max = group.iter().map(|&x| x.abs()).fold(0.0f32, f32::max);
+                
+                // Validate weights before quantization
+                if let Some(&invalid) = group.iter().find(|&&x| !x.is_finite()) {
+                    anyhow::bail!("Invalid weight value detected: {}", invalid);
+                }
 
-                // Calculate scaling factor
-                let scale = if group_max > 0.0 {
-                    group_max / 127.0
+                // Calculate scaling factor with overflow protection
+                let scale = if group_max > 1e-30 {
+                    (group_max / 127.0).max(1e-6).min(1e6)  // Clamp scale to reasonable range
                 } else {
-                    1.0
+                    1e-3  // Use small non-zero scale for zero groups
                 };
 
                 // Quantize the group
@@ -177,7 +175,7 @@ impl BinaryModelExporter {
                     group_error = group_error.max(error);
                 }
 
-                (group_int8, scale, group_error)
+                Ok((group_int8, scale, group_error))
             })
             .collect();
 
@@ -186,7 +184,8 @@ impl BinaryModelExporter {
         let mut scales = Vec::with_capacity(num_groups);
         let mut max_error = 0.0f32;
 
-        for (group_int8, scale, group_error) in group_results {
+        let results = group_results?;  // Handle the Result
+        for (group_int8, scale, group_error) in results {
             int8_data.extend(group_int8);
             scales.push(scale);
             max_error = max_error.max(group_error);
@@ -200,7 +199,7 @@ impl BinaryModelExporter {
     }
 
     /// Write binary header
-    fn write_header<W: Write>(&self, writer: &mut W, header_info: &HeaderInfo) -> Result<()> {
+    fn write_header<W: Write>(&self, writer: &mut W, _header_info: &HeaderInfo) -> Result<()> {
         // Magic number "QWEN" in little-endian (C engine compatible)
         writer.write_u32::<LittleEndian>(Self::MAGIC_NUMBER)?;
 
@@ -208,17 +207,17 @@ impl BinaryModelExporter {
         writer.write_u32::<LittleEndian>(Self::VERSION)?;
 
         // Model parameters in C engine format order
-        writer.write_u32::<LittleEndian>(self.config.vocab_size)?;
-        writer.write_u32::<LittleEndian>(self.config.dim)?;
-        writer.write_u32::<LittleEndian>(self.config.hidden_dim)?;
-        writer.write_u32::<LittleEndian>(self.config.n_layers)?;
-        writer.write_u32::<LittleEndian>(self.config.n_heads)?;
-        writer.write_u32::<LittleEndian>(self.config.n_kv_heads)?;
-        writer.write_u32::<LittleEndian>(self.config.max_seq_len)?;
+        writer.write_u32::<LittleEndian>(self.config.vocab_size as u32)?;
+        writer.write_u32::<LittleEndian>(self.config.dim as u32)?;
+        writer.write_u32::<LittleEndian>(self.config.hidden_dim as u32)?;
+        writer.write_u32::<LittleEndian>(self.config.n_layers as u32)?;
+        writer.write_u32::<LittleEndian>(self.config.n_heads as u32)?;
+        writer.write_u32::<LittleEndian>(self.config.n_kv_heads as u32)?;
+        writer.write_u32::<LittleEndian>(self.config.max_seq_len as u32)?;
         writer.write_f32::<LittleEndian>(self.config.rope_theta)?;
 
-        // Pad to header size (C engine expects 8 parameters + rope_theta)
-        let current_pos = 4 + 4 + 8 * 4; // magic + version + 8 params
+        // Pad to header size
+        let current_pos = Self::CONFIG_SIZE; // 36 bytes for config
         let padding = Self::HEADER_SIZE - current_pos;
         let zeros = vec![0u8; padding];
         writer.write_all(&zeros)?;

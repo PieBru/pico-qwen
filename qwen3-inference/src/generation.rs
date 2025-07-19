@@ -11,6 +11,7 @@ pub fn generate(
     tokenizer: &Tokenizer,
     sampler: &mut Sampler,
     prompt: Option<&str>,
+    max_tokens: Option<usize>,
 ) -> Result<()> {
     let prompt = prompt.unwrap_or("");
     let prompt_tokens = tokenizer.encode(prompt);
@@ -22,23 +23,31 @@ pub fn generate(
     let seq_len = transformer.config.seq_len;
     let mut state = GenerationState::new(prompt_tokens[0]);
 
-    while state.pos < seq_len {
-        let next_token = if state.pos < prompt_tokens.len() - 1 {
-            // Still processing prompt tokens
-            prompt_tokens[state.pos + 1]
-        } else {
-            // Generate new tokens
-            state.metrics.start_generation();
-            let next = generate_next_token(transformer, sampler, state.token, state.pos)?;
-            state.metrics.increment_token();
+    let max_gen_tokens = max_tokens.unwrap_or(50); // Default to 50 tokens
+    let mut tokens_generated = 0;
+    
+    // Process prompt tokens without outputting them
+    for &token in &prompt_tokens {
+        if state.pos >= seq_len {
+            break;
+        }
+        let _ = generate_next_token(transformer, sampler, token, state.pos)?;
+        state.advance(token);
+    }
 
-            if is_termination_token(next, tokenizer) {
-                break;
-            }
-            next
-        };
-
-        output_token(tokenizer, state.token)?;
+    // Now generate new tokens starting from the last prompt token
+    state.metrics.start_generation();
+    while state.pos < seq_len && tokens_generated < max_gen_tokens {
+        let next_token = generate_next_token(transformer, sampler, state.token, state.pos)?;
+        
+        // Check for EOS token
+        if is_termination_token(next_token, tokenizer) {
+            break;
+        }
+        
+        output_token(tokenizer, next_token)?;
+        state.metrics.increment_token();
+        tokens_generated += 1;
         state.advance(next_token);
     }
 
@@ -175,7 +184,11 @@ fn output_token(tokenizer: &Tokenizer, token: usize) -> Result<()> {
 }
 
 fn is_termination_token(token: usize, tokenizer: &Tokenizer) -> bool {
-    token == tokenizer.bos_token_id as usize || token == tokenizer.eos_token_id as usize
+    let is_eos = token == tokenizer.eos_token_id as usize;
+    let is_bos = token == tokenizer.bos_token_id as usize;
+    let _is_excessive_exclamation = token > 0 && token < 10; // Common issue with exclamation tokens
+    
+    is_eos || is_bos || token == 151643 // Qwen3 specific EOS token ID
 }
 
 fn get_user_input(stdin: &io::Stdin, pos: usize, cli_user_prompt: Option<&str>) -> Result<String> {
