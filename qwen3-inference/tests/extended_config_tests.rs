@@ -19,6 +19,7 @@ fn test_extended_config_creation() -> Result<()> {
         vocab_size: 32000,
         group_size: 64,
         shared_classifier: true,
+            rope_theta: 10000.0,
     };
 
     let config = ExtendedModelConfig::new(base_config);
@@ -66,6 +67,7 @@ fn test_quantization_levels() {
         vocab_size: 32000,
         group_size: 64,
         shared_classifier: true,
+            rope_theta: 10000.0,
     };
 
     // Test INT4 quantization
@@ -120,6 +122,7 @@ fn test_cpu_target_optimization() {
         vocab_size: 32000,
         group_size: 64,
         shared_classifier: true,
+            rope_theta: 10000.0,
     };
 
     // Test different CPU targets
@@ -172,6 +175,7 @@ fn test_memory_limits() {
         vocab_size: 32000,
         group_size: 64,
         shared_classifier: true,
+            rope_theta: 10000.0,
     };
 
     let config = ExtendedModelConfig::new(base_config.clone());
@@ -205,6 +209,7 @@ fn test_cloud_config_integration() {
         vocab_size: 32000,
         group_size: 64,
         shared_classifier: true,
+            rope_theta: 10000.0,
     };
 
     let mut config = ExtendedModelConfig::new(base_config);
@@ -249,6 +254,7 @@ fn test_configuration_serialization() -> Result<()> {
         vocab_size: 32000,
         group_size: 64,
         shared_classifier: true,
+            rope_theta: 10000.0,
     };
 
     let config = ExtendedModelConfig::new(base_config);
@@ -372,6 +378,7 @@ fn test_configuration_validation() {
         vocab_size: 32000,
         group_size: 64,
         shared_classifier: true,
+            rope_theta: 10000.0,
     };
 
     let mut config = ExtendedModelConfig::new(base_config);

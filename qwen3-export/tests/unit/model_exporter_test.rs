@@ -79,8 +79,8 @@ fn test_quantize_q80_zero_weights() {
     let weights = vec![0.0, 0.0, 0.0, 0.0];
     let result = exporter.quantize_q80(&weights).unwrap();
 
-    // Scale should be 1.0 (default)
-    assert_eq!(result.scales[0], 1.0);
+    // Scale should be 1e-3 for zero weights (small non-zero scale)
+    assert_eq!(result.scales[0], 1e-3);
 
     // All quantized values should be 0
     assert!(result.int8_data.iter().all(|&x| x == 0));

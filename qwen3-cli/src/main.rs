@@ -255,8 +255,57 @@ fn run_inference_command(matches: &ArgMatches) -> Result<()> {
                 let model_config = model.config().map_err(|e| anyhow::anyhow!("Failed to get config: {e}"))?;
                 println!("Model config: {:?}", model_config);
             } else {
-                println!("C engine loaded model: {}", checkpoint);
-                println!("C inference engine ready for actual model inference");
+                let model_config = model.config().map_err(|e| anyhow::anyhow!("Failed to get config: {e}"))?;
+                println!("🚀 C Engine Model loaded successfully!");
+                println!("📊 Model Configuration:");
+                println!("   Vocab size: {}", model_config.vocab_size);
+                println!("   Model dim: {}", model_config.dim);
+                println!("   Hidden dim: {}", model_config.hidden_dim);
+                println!("   Layers: {}", model_config.n_layers);
+                println!("   Heads: {}", model_config.n_heads);
+                println!("   KV Heads: {}", model_config.n_kv_heads);
+                println!("   Max seq len: {}", model_config.max_seq_len);
+                println!("   RoPE theta: {}", model_config.rope_theta);
+                println!();
+                
+                // Interactive mode
+                let mode = matches.get_one::<String>("mode").map(|s| s.as_str()).unwrap_or("chat");
+                match mode {
+                    "chat" => {
+                        println!("💬 Entering chat mode...");
+                        println!("Type 'exit' or 'quit' to exit the chat");
+                        println!();
+                        
+                        let mut input = String::new();
+                        loop {
+                            print!("You: ");
+                            std::io::Write::flush(&mut std::io::stdout())?;
+                            std::io::stdin().read_line(&mut input)?;
+                            
+                            let trimmed = input.trim();
+                            if trimmed.is_empty() || trimmed == "exit" || trimmed == "quit" {
+                                println!("Goodbye!");
+                                break;
+                            }
+                            
+                            println!("Bot: [C inference engine not yet implemented for full chat]");
+                            println!();
+                            input.clear();
+                        }
+                    }
+                    "generate" => {
+                        if let Some(prompt) = matches.get_one::<String>("input") {
+                            println!("📝 Generating text...");
+                            println!("Prompt: {}", prompt);
+                            println!("Bot: [C inference engine not yet implemented for generation]");
+                        } else {
+                            println!("❌ No prompt provided. Use -i 'your prompt here'");
+                        }
+                    }
+                    _ => {
+                        println!("⚠️  Unknown mode: {}", mode);
+                    }
+                }
             }
         }
         _ => anyhow::bail!("Unsupported engine: {}. Use 'rust' or 'c'", engine),

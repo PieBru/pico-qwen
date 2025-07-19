@@ -146,6 +146,19 @@ pub fn run_inference(inference_config: InferenceConfig) -> Result<()> {
 
     let transformer_config = transformer.get_config();
 
+    // Display model configuration
+    println!("🚀 Rust Engine Model loaded successfully!");
+    println!("📊 Model Configuration:");
+    println!("   Vocab size: {}", transformer_config.vocab_size);
+    println!("   Model dim: {}", transformer_config.dim);
+    println!("   Hidden dim: {}", transformer_config.hidden_dim);
+    println!("   Layers: {}", transformer_config.n_layers);
+    println!("   Heads: {}", transformer_config.n_heads);
+    println!("   KV Heads: {}", transformer_config.n_kv_heads);
+    println!("   Max seq len: {}", transformer_config.seq_len);
+    println!("   RoPE theta: {}", transformer_config.rope_theta);
+    println!();
+
     let tokenizer = Tokenizer::new(
         &inference_config.checkpoint_path,
         transformer_config.vocab_size,

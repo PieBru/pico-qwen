@@ -66,7 +66,7 @@ impl TryInto<ModelConfig> for Config {
             seq_len: self.seq_len as usize,
             vocab_size: self.vocab_size as usize,
             group_size: 64, // Default group size, will be determined from weights
-            shared_classifier: true, // Default assumption, will be determined from weights
+            shared_classifier: true,
             rope_theta: self.rope_theta, // Use the rope_theta from the config
         })
     }

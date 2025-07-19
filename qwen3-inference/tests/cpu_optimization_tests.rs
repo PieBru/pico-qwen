@@ -268,6 +268,7 @@ mod integration_tests {
             vocab_size: 32000,
             group_size: 64,
             shared_classifier: true,
+            rope_theta: 10000.0,
         };
 
         let config = ExtendedModelConfig::new(base_config.clone());
@@ -291,6 +292,7 @@ mod integration_tests {
             vocab_size: 32000,
             group_size: 64,
             shared_classifier: true,
+            rope_theta: 10000.0,
         };
 
         let targets = [

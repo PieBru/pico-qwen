@@ -53,7 +53,7 @@ impl Tokenizer {
         let mut merge_scores = Vec::with_capacity(vocab_size);
 
         // Read vocabulary: (score, length, bytes) for each token
-        for i in 0..vocab_size {
+        for _i in 0..vocab_size {
             // Read score
             let score = match reader.read_f32::<LittleEndian>() {
                 Ok(s) => s,

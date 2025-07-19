@@ -17,6 +17,12 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#ifndef _WIN32
+    #include <arpa/inet.h>
+#else
+    #include <winsock2.h>
+    #define le32toh(x) (x)
+#endif
 
 // Model file format constants - Qwen3 format with metadata
 #define QWEN3_MAGIC 0x5157454E  // "QWEN" in little-endian
@@ -83,15 +89,28 @@ static bool read_uint32(FILE* file, uint32_t* value) {
         set_error("Failed to read uint32 from file: %s", strerror(errno));
         return false;
     }
+    // Convert from little-endian to host byte order (using ntohl)
+    uint32_t le_value = *value;
+    uint8_t* bytes = (uint8_t*)&le_value;
+    *value = ((uint32_t)bytes[0]) |
+             ((uint32_t)bytes[1] << 8) |
+             ((uint32_t)bytes[2] << 16) |
+             ((uint32_t)bytes[3] << 24);
     return true;
 }
-
 
 static bool read_float(FILE* file, float* value) {
     if (fread(value, sizeof(float), 1, file) != 1) {
         set_error("Failed to read float from file: %s", strerror(errno));
         return false;
     }
+    // Convert from little-endian to host byte order
+    uint32_t* int_value = (uint32_t*)value;
+    uint8_t* bytes = (uint8_t*)int_value;
+    *int_value = ((uint32_t)bytes[0]) |
+                 ((uint32_t)bytes[1] << 8) |
+                 ((uint32_t)bytes[2] << 16) |
+                 ((uint32_t)bytes[3] << 24);
     return true;
 }
 

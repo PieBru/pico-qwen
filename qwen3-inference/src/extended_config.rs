@@ -324,6 +324,7 @@ mod tests {
             vocab_size: 32000,
             group_size: 64,
             shared_classifier: true,
+            rope_theta: 10000.0,
         };
 
         let config = ExtendedModelConfig::new(base);
@@ -344,6 +345,7 @@ mod tests {
             vocab_size: 32000,
             group_size: 32,
             shared_classifier: true,
+            rope_theta: 10000.0,
         };
 
         let config = ExtendedModelConfig::new(base);
@@ -367,6 +369,7 @@ mod tests {
             vocab_size: 32000,
             group_size: 32,
             shared_classifier: true,
+            rope_theta: 10000.0,
         };
 
         let config = ExtendedModelConfig::for_cpu_target(base.clone(), CpuTarget::IntelN100);

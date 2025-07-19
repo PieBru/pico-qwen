@@ -178,7 +178,9 @@ impl LoadOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[allow(unused_imports)]
     use tempfile::NamedTempFile;
+    #[allow(unused_imports)]
     use std::io::Write;
     
     #[test]

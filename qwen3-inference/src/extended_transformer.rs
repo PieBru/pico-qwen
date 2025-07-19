@@ -274,6 +274,7 @@ mod tests {
             vocab_size: 32000,
             group_size: 64,
             shared_classifier: true,
+            rope_theta: 10000.0,
         };
 
         let _config = ExtendedModelConfig::new(base_config);
@@ -302,6 +303,7 @@ mod tests {
             vocab_size: 32000,
             group_size: 32,
             shared_classifier: true,
+            rope_theta: 10000.0,
         };
 
         let config = ExtendedModelConfig::new(base_config);
